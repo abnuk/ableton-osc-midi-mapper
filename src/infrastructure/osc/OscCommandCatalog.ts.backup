@@ -1,0 +1,493 @@
+import { OscParameterType, OscParameterDef } from '@domain/entities/OscCommand';
+
+/**
+ * OSC Command Category
+ */
+export enum OscCommandCategory {
+  SONG = 'song',
+  TRACK = 'track',
+  CLIP = 'clip',
+  CLIP_SLOT = 'clip_slot',
+  SCENE = 'scene',
+  DEVICE = 'device',
+  VIEW = 'view',
+  APPLICATION = 'application'
+}
+
+/**
+ * OSC Command Definition
+ */
+export interface OscCommandDef {
+  address: string;
+  category: OscCommandCategory;
+  name: string;
+  description: string;
+  parameters: OscParameterDef[];
+  tags?: string[];
+}
+
+/**
+ * Comprehensive OSC Command Catalog
+ * Extracted from AbletonOSC documentation
+ */
+export class OscCommandCatalog {
+  private static commands: OscCommandDef[] = [
+    // ==================== SONG API ====================
+    {
+      address: '/live/song/start_playing',
+      category: OscCommandCategory.SONG,
+      name: 'Start Playing',
+      description: 'Start session playback',
+      parameters: []
+    },
+    {
+      address: '/live/song/stop_playing',
+      category: OscCommandCategory.SONG,
+      name: 'Stop Playing',
+      description: 'Stop session playback',
+      parameters: []
+    },
+    {
+      address: '/live/song/continue_playing',
+      category: OscCommandCategory.SONG,
+      name: 'Continue Playing',
+      description: 'Resume session playback',
+      parameters: []
+    },
+    {
+      address: '/live/song/stop_all_clips',
+      category: OscCommandCategory.SONG,
+      name: 'Stop All Clips',
+      description: 'Stop all clips from playing',
+      parameters: []
+    },
+    {
+      address: '/live/song/set/tempo',
+      category: OscCommandCategory.SONG,
+      name: 'Set Tempo',
+      description: 'Set the song tempo',
+      parameters: [
+        { name: 'tempo', type: OscParameterType.FLOAT, optional: false, description: 'Tempo in BPM', min: 20, max: 999 }
+      ]
+    },
+    {
+      address: '/live/song/set/metronome',
+      category: OscCommandCategory.SONG,
+      name: 'Set Metronome',
+      description: 'Enable/disable metronome',
+      parameters: [
+        { name: 'enabled', type: OscParameterType.BOOLEAN, optional: false, description: '1=on, 0=off' }
+      ]
+    },
+    {
+      address: '/live/song/create_audio_track',
+      category: OscCommandCategory.SONG,
+      name: 'Create Audio Track',
+      description: 'Create a new audio track',
+      parameters: [
+        { name: 'index', type: OscParameterType.INTEGER, optional: false, description: 'Track index (-1 for end)', min: -1 }
+      ]
+    },
+    {
+      address: '/live/song/create_midi_track',
+      category: OscCommandCategory.SONG,
+      name: 'Create MIDI Track',
+      description: 'Create a new MIDI track',
+      parameters: [
+        { name: 'index', type: OscParameterType.INTEGER, optional: false, description: 'Track index (-1 for end)', min: -1 }
+      ]
+    },
+    {
+      address: '/live/song/delete_track',
+      category: OscCommandCategory.SONG,
+      name: 'Delete Track',
+      description: 'Delete a track',
+      parameters: [
+        { name: 'track_index', type: OscParameterType.INTEGER, optional: false, description: 'Track index', min: 0 }
+      ]
+    },
+    {
+      address: '/live/song/duplicate_track',
+      category: OscCommandCategory.SONG,
+      name: 'Duplicate Track',
+      description: 'Duplicate a track',
+      parameters: [
+        { name: 'track_index', type: OscParameterType.INTEGER, optional: false, description: 'Track index', min: 0 }
+      ]
+    },
+    {
+      address: '/live/song/create_scene',
+      category: OscCommandCategory.SONG,
+      name: 'Create Scene',
+      description: 'Create a new scene',
+      parameters: [
+        { name: 'index', type: OscParameterType.INTEGER, optional: false, description: 'Scene index (-1 for end)', min: -1 }
+      ]
+    },
+    {
+      address: '/live/song/delete_scene',
+      category: OscCommandCategory.SONG,
+      name: 'Delete Scene',
+      description: 'Delete a scene',
+      parameters: [
+        { name: 'scene_index', type: OscParameterType.INTEGER, optional: false, description: 'Scene index', min: 0 }
+      ]
+    },
+    {
+      address: '/live/song/duplicate_scene',
+      category: OscCommandCategory.SONG,
+      name: 'Duplicate Scene',
+      description: 'Duplicate a scene',
+      parameters: [
+        { name: 'scene_index', type: OscParameterType.INTEGER, optional: false, description: 'Scene index', min: 0 }
+      ]
+    },
+    {
+      address: '/live/song/undo',
+      category: OscCommandCategory.SONG,
+      name: 'Undo',
+      description: 'Undo the last operation',
+      parameters: []
+    },
+    {
+      address: '/live/song/redo',
+      category: OscCommandCategory.SONG,
+      name: 'Redo',
+      description: 'Redo the last undone operation',
+      parameters: []
+    },
+    {
+      address: '/live/song/tap_tempo',
+      category: OscCommandCategory.SONG,
+      name: 'Tap Tempo',
+      description: 'Mimics a tap of the "Tap Tempo" button',
+      parameters: []
+    },
+    {
+      address: '/live/song/trigger_session_record',
+      category: OscCommandCategory.SONG,
+      name: 'Trigger Session Record',
+      description: 'Triggers record in session mode',
+      parameters: []
+    },
+
+    // ==================== TRACK API ====================
+    {
+      address: '/live/track/set/volume',
+      category: OscCommandCategory.TRACK,
+      name: 'Set Track Volume',
+      description: 'Set track volume',
+      parameters: [
+        { name: 'track_index', type: OscParameterType.INTEGER, optional: false, description: 'Track index', min: 0 },
+        { name: 'volume', type: OscParameterType.FLOAT, optional: false, description: 'Volume (0.0-1.0)', min: 0, max: 1 }
+      ],
+      tags: ['mixer']
+    },
+    {
+      address: '/live/track/set/panning',
+      category: OscCommandCategory.TRACK,
+      name: 'Set Track Panning',
+      description: 'Set track panning',
+      parameters: [
+        { name: 'track_index', type: OscParameterType.INTEGER, optional: false, description: 'Track index', min: 0 },
+        { name: 'panning', type: OscParameterType.FLOAT, optional: false, description: 'Pan (-1.0 to 1.0)', min: -1, max: 1 }
+      ],
+      tags: ['mixer']
+    },
+    {
+      address: '/live/track/set/send',
+      category: OscCommandCategory.TRACK,
+      name: 'Set Track Send',
+      description: 'Set track send level',
+      parameters: [
+        { name: 'track_index', type: OscParameterType.INTEGER, optional: false, description: 'Track index', min: 0 },
+        { name: 'send_index', type: OscParameterType.INTEGER, optional: false, description: 'Send index', min: 0 },
+        { name: 'value', type: OscParameterType.FLOAT, optional: false, description: 'Send level (0.0-1.0)', min: 0, max: 1 }
+      ],
+      tags: ['mixer']
+    },
+    {
+      address: '/live/track/set/mute',
+      category: OscCommandCategory.TRACK,
+      name: 'Set Track Mute',
+      description: 'Mute/unmute a track',
+      parameters: [
+        { name: 'track_index', type: OscParameterType.INTEGER, optional: false, description: 'Track index', min: 0 },
+        { name: 'mute', type: OscParameterType.BOOLEAN, optional: false, description: '1=mute, 0=unmute' }
+      ]
+    },
+    {
+      address: '/live/track/set/solo',
+      category: OscCommandCategory.TRACK,
+      name: 'Set Track Solo',
+      description: 'Solo/unsolo a track',
+      parameters: [
+        { name: 'track_index', type: OscParameterType.INTEGER, optional: false, description: 'Track index', min: 0 },
+        { name: 'solo', type: OscParameterType.BOOLEAN, optional: false, description: '1=solo, 0=unsolo' }
+      ]
+    },
+    {
+      address: '/live/track/set/arm',
+      category: OscCommandCategory.TRACK,
+      name: 'Set Track Arm',
+      description: 'Arm/unarm a track for recording',
+      parameters: [
+        { name: 'track_index', type: OscParameterType.INTEGER, optional: false, description: 'Track index', min: 0 },
+        { name: 'arm', type: OscParameterType.BOOLEAN, optional: false, description: '1=arm, 0=unarm' }
+      ]
+    },
+    {
+      address: '/live/track/set/name',
+      category: OscCommandCategory.TRACK,
+      name: 'Set Track Name',
+      description: 'Set track name',
+      parameters: [
+        { name: 'track_index', type: OscParameterType.INTEGER, optional: false, description: 'Track index', min: 0 },
+        { name: 'name', type: OscParameterType.STRING, optional: false, description: 'Track name' }
+      ]
+    },
+    {
+      address: '/live/track/stop_all_clips',
+      category: OscCommandCategory.TRACK,
+      name: 'Stop All Clips on Track',
+      description: 'Stop all clips on a track',
+      parameters: [
+        { name: 'track_index', type: OscParameterType.INTEGER, optional: false, description: 'Track index', min: 0 }
+      ]
+    },
+
+    // ==================== CLIP SLOT API ====================
+    {
+      address: '/live/clip_slot/fire',
+      category: OscCommandCategory.CLIP_SLOT,
+      name: 'Fire Clip Slot',
+      description: 'Fire/play clip in slot',
+      parameters: [
+        { name: 'track_index', type: OscParameterType.INTEGER, optional: false, description: 'Track index', min: 0 },
+        { name: 'clip_index', type: OscParameterType.INTEGER, optional: false, description: 'Clip slot index', min: 0 }
+      ]
+    },
+    {
+      address: '/live/clip_slot/stop',
+      category: OscCommandCategory.CLIP_SLOT,
+      name: 'Stop Clip Slot',
+      description: 'Stop clip in slot',
+      parameters: [
+        { name: 'track_index', type: OscParameterType.INTEGER, optional: false, description: 'Track index', min: 0 },
+        { name: 'clip_index', type: OscParameterType.INTEGER, optional: false, description: 'Clip slot index', min: 0 }
+      ]
+    },
+    {
+      address: '/live/clip_slot/delete_clip',
+      category: OscCommandCategory.CLIP_SLOT,
+      name: 'Delete Clip',
+      description: 'Delete clip in slot',
+      parameters: [
+        { name: 'track_index', type: OscParameterType.INTEGER, optional: false, description: 'Track index', min: 0 },
+        { name: 'clip_index', type: OscParameterType.INTEGER, optional: false, description: 'Clip slot index', min: 0 }
+      ],
+      tags: ['important']
+    },
+    {
+      address: '/live/clip_slot/create_clip',
+      category: OscCommandCategory.CLIP_SLOT,
+      name: 'Create Clip',
+      description: 'Create a new clip in slot',
+      parameters: [
+        { name: 'track_index', type: OscParameterType.INTEGER, optional: false, description: 'Track index', min: 0 },
+        { name: 'clip_index', type: OscParameterType.INTEGER, optional: false, description: 'Clip slot index', min: 0 },
+        { name: 'length', type: OscParameterType.FLOAT, optional: false, description: 'Clip length in beats', min: 0.25 }
+      ]
+    },
+    {
+      address: '/live/clip_slot/duplicate_clip_to',
+      category: OscCommandCategory.CLIP_SLOT,
+      name: 'Duplicate Clip To',
+      description: 'Duplicate clip to target slot',
+      parameters: [
+        { name: 'track_index', type: OscParameterType.INTEGER, optional: false, description: 'Source track index', min: 0 },
+        { name: 'clip_index', type: OscParameterType.INTEGER, optional: false, description: 'Source clip index', min: 0 },
+        { name: 'target_track_index', type: OscParameterType.INTEGER, optional: false, description: 'Target track index', min: 0 },
+        { name: 'target_clip_index', type: OscParameterType.INTEGER, optional: false, description: 'Target clip index', min: 0 }
+      ]
+    },
+
+    // ==================== CLIP API ====================
+    {
+      address: '/live/clip/fire',
+      category: OscCommandCategory.CLIP,
+      name: 'Fire Clip',
+      description: 'Start clip playback',
+      parameters: [
+        { name: 'track_index', type: OscParameterType.INTEGER, optional: false, description: 'Track index', min: 0 },
+        { name: 'clip_index', type: OscParameterType.INTEGER, optional: false, description: 'Clip index', min: 0 }
+      ]
+    },
+    {
+      address: '/live/clip/stop',
+      category: OscCommandCategory.CLIP,
+      name: 'Stop Clip',
+      description: 'Stop clip playback',
+      parameters: [
+        { name: 'track_index', type: OscParameterType.INTEGER, optional: false, description: 'Track index', min: 0 },
+        { name: 'clip_index', type: OscParameterType.INTEGER, optional: false, description: 'Clip index', min: 0 }
+      ]
+    },
+    {
+      address: '/live/clip/set/name',
+      category: OscCommandCategory.CLIP,
+      name: 'Set Clip Name',
+      description: 'Set clip name',
+      parameters: [
+        { name: 'track_index', type: OscParameterType.INTEGER, optional: false, description: 'Track index', min: 0 },
+        { name: 'clip_index', type: OscParameterType.INTEGER, optional: false, description: 'Clip index', min: 0 },
+        { name: 'name', type: OscParameterType.STRING, optional: false, description: 'Clip name' }
+      ]
+    },
+    {
+      address: '/live/clip/set/color',
+      category: OscCommandCategory.CLIP,
+      name: 'Set Clip Color',
+      description: 'Set clip color',
+      parameters: [
+        { name: 'track_index', type: OscParameterType.INTEGER, optional: false, description: 'Track index', min: 0 },
+        { name: 'clip_index', type: OscParameterType.INTEGER, optional: false, description: 'Clip index', min: 0 },
+        { name: 'color', type: OscParameterType.INTEGER, optional: false, description: 'Color value', min: 0 }
+      ]
+    },
+    {
+      address: '/live/clip/set/gain',
+      category: OscCommandCategory.CLIP,
+      name: 'Set Clip Gain',
+      description: 'Set clip gain',
+      parameters: [
+        { name: 'track_index', type: OscParameterType.INTEGER, optional: false, description: 'Track index', min: 0 },
+        { name: 'clip_index', type: OscParameterType.INTEGER, optional: false, description: 'Clip index', min: 0 },
+        { name: 'gain', type: OscParameterType.FLOAT, optional: false, description: 'Gain value', min: 0, max: 2 }
+      ]
+    },
+    {
+      address: '/live/clip/duplicate_loop',
+      category: OscCommandCategory.CLIP,
+      name: 'Duplicate Clip Loop',
+      description: 'Duplicates clip loop',
+      parameters: [
+        { name: 'track_index', type: OscParameterType.INTEGER, optional: false, description: 'Track index', min: 0 },
+        { name: 'clip_index', type: OscParameterType.INTEGER, optional: false, description: 'Clip index', min: 0 }
+      ]
+    },
+
+    // ==================== SCENE API ====================
+    {
+      address: '/live/scene/fire',
+      category: OscCommandCategory.SCENE,
+      name: 'Fire Scene',
+      description: 'Trigger a scene',
+      parameters: [
+        { name: 'scene_index', type: OscParameterType.INTEGER, optional: false, description: 'Scene index', min: 0 }
+      ]
+    },
+    {
+      address: '/live/scene/fire_as_selected',
+      category: OscCommandCategory.SCENE,
+      name: 'Fire Scene as Selected',
+      description: 'Fire scene and select next',
+      parameters: [
+        { name: 'scene_index', type: OscParameterType.INTEGER, optional: false, description: 'Scene index', min: 0 }
+      ]
+    },
+    {
+      address: '/live/scene/set/name',
+      category: OscCommandCategory.SCENE,
+      name: 'Set Scene Name',
+      description: 'Set scene name',
+      parameters: [
+        { name: 'scene_index', type: OscParameterType.INTEGER, optional: false, description: 'Scene index', min: 0 },
+        { name: 'name', type: OscParameterType.STRING, optional: false, description: 'Scene name' }
+      ]
+    },
+
+    // ==================== VIEW API ====================
+    {
+      address: '/live/view/set/selected_track',
+      category: OscCommandCategory.VIEW,
+      name: 'Select Track',
+      description: 'Set selected track',
+      parameters: [
+        { name: 'track_index', type: OscParameterType.INTEGER, optional: false, description: 'Track index', min: 0 }
+      ]
+    },
+    {
+      address: '/live/view/set/selected_scene',
+      category: OscCommandCategory.VIEW,
+      name: 'Select Scene',
+      description: 'Set selected scene',
+      parameters: [
+        { name: 'scene_index', type: OscParameterType.INTEGER, optional: false, description: 'Scene index', min: 0 }
+      ]
+    },
+
+    // ==================== DEVICE API ====================
+    {
+      address: '/live/device/set/parameter/value',
+      category: OscCommandCategory.DEVICE,
+      name: 'Set Device Parameter',
+      description: 'Set device parameter value',
+      parameters: [
+        { name: 'track_index', type: OscParameterType.INTEGER, optional: false, description: 'Track index', min: 0 },
+        { name: 'device_index', type: OscParameterType.INTEGER, optional: false, description: 'Device index', min: 0 },
+        { name: 'parameter_index', type: OscParameterType.INTEGER, optional: false, description: 'Parameter index', min: 0 },
+        { name: 'value', type: OscParameterType.FLOAT, optional: false, description: 'Parameter value' }
+      ]
+    }
+  ];
+
+  /**
+   * Get all commands
+   */
+  static getAllCommands(): ReadonlyArray<OscCommandDef> {
+    return this.commands;
+  }
+
+  /**
+   * Get commands by category
+   */
+  static getCommandsByCategory(category: OscCommandCategory): OscCommandDef[] {
+    return this.commands.filter(cmd => cmd.category === category);
+  }
+
+  /**
+   * Get command by address
+   */
+  static getCommandByAddress(address: string): OscCommandDef | undefined {
+    return this.commands.find(cmd => cmd.address === address);
+  }
+
+  /**
+   * Search commands by name or description
+   */
+  static searchCommands(query: string): OscCommandDef[] {
+    const lowerQuery = query.toLowerCase();
+    return this.commands.filter(
+      cmd =>
+        cmd.name.toLowerCase().includes(lowerQuery) ||
+        cmd.description.toLowerCase().includes(lowerQuery) ||
+        cmd.address.toLowerCase().includes(lowerQuery)
+    );
+  }
+
+  /**
+   * Get commands by tags
+   */
+  static getCommandsByTag(tag: string): OscCommandDef[] {
+    return this.commands.filter(cmd => cmd.tags?.includes(tag));
+  }
+
+  /**
+   * Get all categories
+   */
+  static getAllCategories(): OscCommandCategory[] {
+    return Object.values(OscCommandCategory);
+  }
+}
+
