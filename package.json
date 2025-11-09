@@ -3,6 +3,13 @@
   "version": "1.0.0",
   "description": "MIDI to Ableton OSC Mapper with Clean Architecture",
   "main": "dist/main/index.js",
+  "build": {
+    "mac": {
+      "extendInfo": {
+        "LSUIElement": 1
+      }
+    }
+  },
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",

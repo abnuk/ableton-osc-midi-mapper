@@ -11,7 +11,8 @@
   "mac": {
     "target": ["dmg", "zip"],
     "category": "public.app-category.music",
-    "icon": "resources/icon.icns"
+    "icon": "resources/icon.icns",
+    "type": "agent"
   },
   "win": {
     "target": ["nsis", "portable"],

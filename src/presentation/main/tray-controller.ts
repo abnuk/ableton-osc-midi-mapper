@@ -14,20 +14,37 @@ export class TrayController {
   }
 
   create(): void {
-    // Create tray icon
-    const iconPath = this.getIconPath();
-    const icon = nativeImage.createFromPath(iconPath);
-    
-    this.tray = new Tray(icon.resize({ width: 16, height: 16 }));
-    this.tray.setToolTip('Ableton OSC MIDI Mapper');
+    try {
+      console.log('TrayController.create() called');
+      
+      // Create tray with empty icon first
+      this.tray = new Tray(nativeImage.createEmpty());
+      console.log('Tray instance created');
+      
+      // Set emoji keyboard for macOS - visible and clear
+      if (process.platform === 'darwin') {
+        this.tray.setTitle('🎹');  // Piano keyboard emoji
+        console.log('Tray title set to keyboard emoji');
+      }
+      
+      this.tray.setToolTip('Ableton OSC MIDI Mapper');
+      console.log('Tooltip set');
+      
+      // Create context menu
+      this.updateContextMenu();
+      console.log('Context menu updated');
 
-    // Create context menu
-    this.updateContextMenu();
-
-    // Handle click on tray icon
-    this.tray.on('click', () => {
-      this.toggleWindow();
-    });
+      // Handle click on tray icon
+      this.tray.on('click', () => {
+        console.log('Tray icon clicked');
+        this.toggleWindow();
+      });
+      
+      console.log('Tray created successfully with keyboard emoji');
+    } catch (error) {
+      console.error('Error creating tray icon:', error);
+      console.error('Stack trace:', (error as Error).stack);
+    }
   }
 
   private updateContextMenu(): void {
@@ -54,12 +71,17 @@ export class TrayController {
 
   private getIconPath(): string {
     // Try to load icon from resources
-    // For now, use a placeholder - you'd need to create actual icon files
     const platformPath = process.platform === 'darwin' 
       ? 'iconTemplate.png'  // macOS uses template icons
       : 'icon.png';
 
-    return path.join(__dirname, '../../resources', platformPath);
+    // Use app.getAppPath() which works in both dev and production
+    const iconPath = path.join(app.getAppPath(), 'resources', platformPath);
+    console.log('Attempting to load icon from:', iconPath);
+    console.log('app.getAppPath():', app.getAppPath());
+    console.log('__dirname:', __dirname);
+    
+    return iconPath;
   }
 
   private toggleWindow(): void {

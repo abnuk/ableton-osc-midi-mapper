@@ -18,6 +18,7 @@ function createWindow(): void {
     width: 1200,
     height: 800,
     show: false, // Don't show until ready
+    skipTaskbar: true, // Don't show in taskbar/dock
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -35,6 +36,7 @@ function createWindow(): void {
 
   // Show window when ready
   mainWindow.once('ready-to-show', () => {
+    console.log('=== WINDOW READY TO SHOW ===');
     mainWindow?.show();
   });
 
@@ -70,10 +72,26 @@ async function initialize(): Promise<void> {
     ipcHandlers.setupMidiProcessing(mainWindow.webContents);
   }
 
-  // Create system tray
+  // Create system tray BEFORE hiding dock (important on macOS)
   if (mainWindow) {
+    console.log('=== CREATING TRAY CONTROLLER ===');
     trayController = new TrayController(mainWindow);
     trayController.create();
+    console.log('=== TRAY CONTROLLER CREATED ===');
+    
+    // Give tray time to initialize before hiding dock
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+
+  // Now hide dock icon on macOS - AFTER tray is created
+  if (process.platform === 'darwin') {
+    console.log('=== HIDING DOCK ICON ===');
+    try {
+      app.dock.hide();
+      console.log('=== DOCK ICON HIDDEN ===');
+    } catch (error) {
+      console.error('Error hiding dock:', error);
+    }
   }
 
   // Connect to OSC on startup
