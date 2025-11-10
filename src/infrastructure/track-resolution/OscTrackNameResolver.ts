@@ -9,12 +9,14 @@ import { Result, success, failure } from '@shared/types/Result';
 /**
  * OSC Track Name Resolver
  * Resolves track names to indices by querying Ableton via OSC
+ * Also supports manual track configuration from the UI
  */
 @injectable()
 export class OscTrackNameResolver implements ITrackNameResolver {
   private tracks: TrackInfo[] = [];
   private cacheTimestamp: number = 0;
   private readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+  private onTracksChangedCallbacks: Array<(tracks: TrackInfo[]) => void> = [];
 
   constructor(
     @inject(TYPES.OscOutputService) private readonly oscService: IOscOutputService
@@ -79,6 +81,7 @@ export class OscTrackNameResolver implements ITrackNameResolver {
   clearCache(): void {
     this.tracks = [];
     this.cacheTimestamp = 0;
+    this.notifyTracksChanged();
   }
 
   getCacheAge(): number {
@@ -98,6 +101,83 @@ export class OscTrackNameResolver implements ITrackNameResolver {
   setTracks(tracks: TrackInfo[]): void {
     this.tracks = [...tracks];
     this.cacheTimestamp = Date.now();
+    this.notifyTracksChanged();
+  }
+
+  /**
+   * Add a single track manually
+   */
+  addTrack(trackInfo: TrackInfo): Result<void> {
+    // Check if track index already exists
+    const existingIndex = this.tracks.findIndex(t => t.index === trackInfo.index);
+    
+    if (existingIndex >= 0) {
+      // Update existing track
+      this.tracks[existingIndex] = trackInfo;
+    } else {
+      // Add new track
+      this.tracks.push(trackInfo);
+      // Sort by index
+      this.tracks.sort((a, b) => a.index - b.index);
+    }
+    
+    this.cacheTimestamp = Date.now();
+    this.notifyTracksChanged();
+    return success(undefined);
+  }
+
+  /**
+   * Remove a track by index
+   */
+  removeTrack(index: number): Result<void> {
+    const trackIndex = this.tracks.findIndex(t => t.index === index);
+    
+    if (trackIndex < 0) {
+      return failure(new Error(`Track with index ${index} not found`));
+    }
+    
+    this.tracks.splice(trackIndex, 1);
+    this.cacheTimestamp = Date.now();
+    this.notifyTracksChanged();
+    return success(undefined);
+  }
+
+  /**
+   * Update a track's name
+   */
+  updateTrack(index: number, newName: string): Result<void> {
+    const track = this.tracks.find(t => t.index === index);
+    
+    if (!track) {
+      return failure(new Error(`Track with index ${index} not found`));
+    }
+    
+    const trackIndex = this.tracks.indexOf(track);
+    this.tracks[trackIndex] = TrackInfo.create(index, newName);
+    this.cacheTimestamp = Date.now();
+    this.notifyTracksChanged();
+    return success(undefined);
+  }
+
+  /**
+   * Register a callback to be notified when tracks change
+   */
+  onTracksChanged(callback: (tracks: TrackInfo[]) => void): void {
+    this.onTracksChangedCallbacks.push(callback);
+  }
+
+  /**
+   * Notify all registered callbacks of track changes
+   */
+  private notifyTracksChanged(): void {
+    const tracksCopy = [...this.tracks];
+    this.onTracksChangedCallbacks.forEach(callback => {
+      try {
+        callback(tracksCopy);
+      } catch (error) {
+        console.error('Error in onTracksChanged callback:', error);
+      }
+    });
   }
 }
 

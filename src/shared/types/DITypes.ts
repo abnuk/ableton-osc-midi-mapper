@@ -25,6 +25,7 @@ export const TYPES = {
   FetchTrackNames: Symbol.for('FetchTrackNames'),
   GetConfig: Symbol.for('GetConfig'),
   UpdateConfig: Symbol.for('UpdateConfig'),
-  TestOscConnection: Symbol.for('TestOscConnection')
+  TestOscConnection: Symbol.for('TestOscConnection'),
+  ManageTrack: Symbol.for('ManageTrack')
 };
 

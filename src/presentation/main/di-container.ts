@@ -29,6 +29,7 @@ import { FetchTrackNames } from '@application/use-cases/FetchTrackNames';
 import { GetConfig } from '@application/use-cases/GetConfig';
 import { UpdateConfig } from '@application/use-cases/UpdateConfig';
 import { TestOscConnection } from '@application/use-cases/TestOscConnection';
+import { ManageTrack } from '@application/use-cases/ManageTrack';
 
 /**
  * Create and configure the dependency injection container
@@ -58,6 +59,7 @@ export function createContainer(): Container {
   container.bind<GetConfig>(TYPES.GetConfig).to(GetConfig);
   container.bind<UpdateConfig>(TYPES.UpdateConfig).to(UpdateConfig);
   container.bind<TestOscConnection>(TYPES.TestOscConnection).to(TestOscConnection);
+  container.bind<ManageTrack>(TYPES.ManageTrack).to(ManageTrack);
 
   return container;
 }

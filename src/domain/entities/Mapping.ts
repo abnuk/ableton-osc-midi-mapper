@@ -10,8 +10,11 @@ export enum ParameterSubstitution {
   NONE = 'none',                    // No substitution
   VELOCITY = 'velocity',            // Use MIDI velocity/value
   VELOCITY_NORMALIZED = 'velocity_normalized',  // Use normalized velocity (0-1)
-  TRACK_NAME = 'track_name',       // Resolve track name to index
-  TRACK_INDEX = 'track_index'      // Use track index directly
+  TRACK_INDEX = 'track_index',     // Use track index directly
+  CLIP_INDEX = 'clip_index',       // Use clip index directly
+  SCENE_INDEX = 'scene_index',     // Use scene index directly
+  DEVICE_INDEX = 'device_index',   // Use device index directly
+  STATIC_VALUE = 'static_value'    // Use a static value
 }
 
 /**
@@ -21,8 +24,11 @@ export enum ParameterSubstitution {
 export interface ParameterMapping {
   parameterIndex: number;
   substitution: ParameterSubstitution;
-  trackName?: string;  // If substitution is TRACK_NAME
   trackIndex?: number; // If substitution is TRACK_INDEX
+  clipIndex?: number;  // If substitution is CLIP_INDEX
+  sceneIndex?: number; // If substitution is SCENE_INDEX
+  deviceIndex?: number; // If substitution is DEVICE_INDEX
+  staticValue?: number | string | boolean; // If substitution is STATIC_VALUE
 }
 
 /**

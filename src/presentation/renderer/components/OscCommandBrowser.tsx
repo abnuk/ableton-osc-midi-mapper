@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { OscCommandCatalog, OscCommandDef } from '../../../infrastructure/osc/OscCommandCatalog';
+import ParameterEditor from './ParameterEditor';
+import { ParameterMapping } from '../../../domain/entities/Mapping';
 
 const CATEGORIES = ['all', 'song', 'track', 'clip_slot', 'clip', 'scene', 'device', 'view', 'application'];
 
@@ -7,6 +9,8 @@ const OscCommandBrowser: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [commands, setCommands] = useState<OscCommandDef[]>([]);
+  const [selectedCommand, setSelectedCommand] = useState<OscCommandDef | null>(null);
+  const [parameterMappings, setParameterMappings] = useState<ParameterMapping[]>([]);
 
   useEffect(() => {
     filterCommands();
@@ -32,24 +36,84 @@ const OscCommandBrowser: React.FC = () => {
     setCommands(filtered);
   };
 
-  const handleLearnCommand = async (command: OscCommandDef) => {
+  const handleSelectCommand = (command: OscCommandDef) => {
+    setSelectedCommand(command);
+    // Initialize parameter mappings for this command
+    setParameterMappings([]);
+  };
+
+  const handleParameterMappingsChange = (mappings: ParameterMapping[]) => {
+    setParameterMappings(mappings);
+  };
+
+  const handleLearnCommand = async () => {
+    if (!selectedCommand) return;
+
     try {
-      const parameters = command.parameters.map((p: any) => p.defaultValue ?? 0);
+      const parameters = selectedCommand.parameters.map((p: any) => p.defaultValue ?? 0);
 
       const result = await window.api.learn.start({
-        commandAddress: command.address,
+        commandAddress: selectedCommand.address,
         commandParameters: parameters,
-        parameterMappings: []
+        parameterMappings: parameterMappings
       });
 
       if (!result.success) {
         alert('Failed to start learn mode: ' + result.error);
+      } else {
+        // Close parameter editor after starting learn mode
+        setSelectedCommand(null);
+        setParameterMappings([]);
       }
     } catch (error) {
       console.error('Failed to start learn mode:', error);
       alert('Failed to start learn mode');
     }
   };
+
+  const handleBack = () => {
+    setSelectedCommand(null);
+    setParameterMappings([]);
+  };
+
+  if (selectedCommand) {
+    return (
+      <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <button 
+          className="btn" 
+          onClick={handleBack}
+          style={{ marginBottom: '1rem', alignSelf: 'flex-start' }}
+        >
+          ← Back to Commands
+        </button>
+
+        <div style={{ marginBottom: '1rem' }}>
+          <span className="command-category">{selectedCommand.category}</span>
+          <h2>{selectedCommand.name}</h2>
+          <p style={{ color: '#aaa' }}>{selectedCommand.description}</p>
+          <p style={{ fontFamily: 'monospace', fontSize: '0.875rem', color: '#888' }}>
+            {selectedCommand.address}
+          </p>
+        </div>
+
+        <div style={{ flex: 1, overflowY: 'auto', marginBottom: '1rem' }}>
+          <ParameterEditor
+            parameters={selectedCommand.parameters}
+            parameterMappings={parameterMappings}
+            onChange={handleParameterMappingsChange}
+          />
+        </div>
+
+        <button
+          className="btn btn-primary"
+          onClick={handleLearnCommand}
+          style={{ padding: '0.75rem', fontSize: '1rem' }}
+        >
+          Start Learn Mode
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -86,12 +150,17 @@ const OscCommandBrowser: React.FC = () => {
             <p style={{ fontFamily: 'monospace', marginTop: '0.5rem', fontSize: '0.75rem' }}>
               {command.address}
             </p>
+            {command.parameters.length > 0 && (
+              <p style={{ fontSize: '0.75rem', color: '#888', marginTop: '0.25rem' }}>
+                Parameters: {command.parameters.length}
+              </p>
+            )}
             <button
               className="btn btn-primary"
-              onClick={() => handleLearnCommand(command)}
+              onClick={() => handleSelectCommand(command)}
               style={{ marginTop: '0.5rem' }}
             >
-              Learn
+              {command.parameters.length > 0 ? 'Configure & Learn' : 'Learn'}
             </button>
           </div>
         ))}

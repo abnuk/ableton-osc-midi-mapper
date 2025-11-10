@@ -72,7 +72,8 @@ export class StartLearnMode {
     console.log('=== LEARN MODE: Creating mapping ===', {
       name: mappingName,
       trigger,
-      sourceDevice
+      sourceDevice,
+      parameterMappings: commandToMap.parameterMappings
     });
 
     // Create the mapping

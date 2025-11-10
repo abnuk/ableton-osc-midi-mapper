@@ -36,7 +36,11 @@ contextBridge.exposeInMainWorld('api', {
 
   // Tracks
   tracks: {
-    fetch: (forceRefresh?: boolean) => ipcRenderer.invoke('tracks:fetch', forceRefresh)
+    fetch: (forceRefresh?: boolean) => ipcRenderer.invoke('tracks:fetch', forceRefresh),
+    add: (input: any) => ipcRenderer.invoke('tracks:add', input),
+    update: (input: any) => ipcRenderer.invoke('tracks:update', input),
+    remove: (input: any) => ipcRenderer.invoke('tracks:remove', input),
+    clear: () => ipcRenderer.invoke('tracks:clear')
   },
 
   // Config
@@ -73,6 +77,10 @@ export interface ElectronAPI {
   };
   tracks: {
     fetch: (forceRefresh?: boolean) => Promise<any>;
+    add: (input: any) => Promise<any>;
+    update: (input: any) => Promise<any>;
+    remove: (input: any) => Promise<any>;
+    clear: () => Promise<any>;
   };
   config: {
     get: () => Promise<any>;

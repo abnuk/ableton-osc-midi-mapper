@@ -71,7 +71,15 @@ export class ProcessMidiInput {
   }
 
   private resolveParameterValue(
-    paramMapping: { parameterIndex: number; substitution: ParameterSubstitution; trackName?: string; trackIndex?: number },
+    paramMapping: { 
+      parameterIndex: number; 
+      substitution: ParameterSubstitution; 
+      trackIndex?: number;
+      clipIndex?: number;
+      sceneIndex?: number;
+      deviceIndex?: number;
+      staticValue?: number | string | boolean;
+    },
     message: MidiMessage
   ): number | string | boolean | null {
     switch (paramMapping.substitution) {
@@ -94,15 +102,20 @@ export class ProcessMidiInput {
         }
         return null;
 
-      case ParameterSubstitution.TRACK_NAME:
-        if (paramMapping.trackName) {
-          const result = this.trackResolver.resolveTrackName(paramMapping.trackName);
-          return result.isSuccess() ? result.value : null;
-        }
-        return null;
-
       case ParameterSubstitution.TRACK_INDEX:
         return paramMapping.trackIndex ?? null;
+
+      case ParameterSubstitution.CLIP_INDEX:
+        return paramMapping.clipIndex ?? null;
+
+      case ParameterSubstitution.SCENE_INDEX:
+        return paramMapping.sceneIndex ?? null;
+
+      case ParameterSubstitution.DEVICE_INDEX:
+        return paramMapping.deviceIndex ?? null;
+
+      case ParameterSubstitution.STATIC_VALUE:
+        return paramMapping.staticValue ?? null;
 
       default:
         return null;

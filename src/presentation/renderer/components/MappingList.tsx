@@ -1,11 +1,22 @@
 import React, { useState, useEffect } from 'react';
 
+interface ParameterMapping {
+  parameterIndex: number;
+  substitution: string;
+  trackIndex?: number;
+  clipIndex?: number;
+  sceneIndex?: number;
+  deviceIndex?: number;
+  staticValue?: number | string | boolean;
+}
+
 interface Mapping {
   id: string;
   name: string;
   enabled: boolean;
   trigger: any;
   command: any;
+  parameterMappings?: ParameterMapping[];
 }
 
 const MappingList: React.FC = () => {
@@ -72,6 +83,37 @@ const MappingList: React.FC = () => {
     }
   };
 
+  const getSubstitutionLabel = (substitution: string): string => {
+    const labels: Record<string, string> = {
+      'none': 'None',
+      'velocity': 'MIDI Velocity',
+      'velocity_normalized': 'MIDI Velocity (0-1)',
+      'track_index': 'Track Index',
+      'clip_index': 'Clip Index',
+      'scene_index': 'Scene Index',
+      'device_index': 'Device Index',
+      'static_value': 'Static Value'
+    };
+    return labels[substitution] || substitution;
+  };
+
+  const renderParameterValue = (paramMapping: ParameterMapping): string => {
+    switch (paramMapping.substitution) {
+      case 'track_index':
+        return paramMapping.trackIndex !== undefined ? paramMapping.trackIndex.toString() : '?';
+      case 'clip_index':
+        return paramMapping.clipIndex !== undefined ? paramMapping.clipIndex.toString() : '?';
+      case 'scene_index':
+        return paramMapping.sceneIndex !== undefined ? paramMapping.sceneIndex.toString() : '?';
+      case 'device_index':
+        return paramMapping.deviceIndex !== undefined ? paramMapping.deviceIndex.toString() : '?';
+      case 'static_value':
+        return paramMapping.staticValue !== undefined ? String(paramMapping.staticValue) : '?';
+      default:
+        return '';
+    }
+  };
+
   if (loading) {
     return <div>Loading mappings...</div>;
   }
@@ -113,7 +155,46 @@ const MappingList: React.FC = () => {
               </div>
             </div>
             <div className="mapping-details">
-              <div>{mapping.command.address}</div>
+              <div style={{ fontFamily: 'monospace', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+                {mapping.command.address}
+              </div>
+
+              {mapping.parameterMappings && mapping.parameterMappings.length > 0 && (
+                <div style={{ 
+                  marginTop: '0.5rem', 
+                  padding: '0.5rem', 
+                  backgroundColor: '#1a1a1a',
+                  borderRadius: '4px',
+                  fontSize: '0.875rem'
+                }}>
+                  <div style={{ fontWeight: 'bold', marginBottom: '0.25rem', color: '#888' }}>
+                    Parameter Mappings:
+                  </div>
+                  {mapping.parameterMappings.map((pm, idx) => (
+                    <div 
+                      key={idx} 
+                      style={{ 
+                        display: 'flex', 
+                        gap: '0.5rem', 
+                        padding: '0.25rem 0',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <span style={{ color: '#4CAF50', fontWeight: 'bold', minWidth: '50px' }}>
+                        Param {pm.parameterIndex}:
+                      </span>
+                      <span style={{ color: '#2196F3' }}>
+                        {getSubstitutionLabel(pm.substitution)}
+                      </span>
+                      {pm.substitution !== 'none' && pm.substitution !== 'velocity' && pm.substitution !== 'velocity_normalized' && (
+                        <span style={{ color: '#FFC107', fontFamily: 'monospace' }}>
+                          = {renderParameterValue(pm)}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ))

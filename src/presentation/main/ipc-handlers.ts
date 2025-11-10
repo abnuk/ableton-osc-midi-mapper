@@ -15,6 +15,7 @@ import { FetchTrackNames } from '@application/use-cases/FetchTrackNames';
 import { GetConfig } from '@application/use-cases/GetConfig';
 import { UpdateConfig } from '@application/use-cases/UpdateConfig';
 import { TestOscConnection } from '@application/use-cases/TestOscConnection';
+import { ManageTrack } from '@application/use-cases/ManageTrack';
 import { IMidiInputService } from '@domain/services/IMidiInputService';
 import { IOscOutputService } from '@domain/services/IOscOutputService';
 
@@ -90,6 +91,26 @@ export class IpcHandlers {
     ipcMain.handle('tracks:fetch', async (_, forceRefresh?: boolean) => {
       const useCase = this.container.get<FetchTrackNames>(TYPES.FetchTrackNames);
       return await useCase.execute(forceRefresh);
+    });
+
+    ipcMain.handle('tracks:add', async (_, input) => {
+      const useCase = this.container.get<ManageTrack>(TYPES.ManageTrack);
+      return await useCase.addTrack(input);
+    });
+
+    ipcMain.handle('tracks:update', async (_, input) => {
+      const useCase = this.container.get<ManageTrack>(TYPES.ManageTrack);
+      return await useCase.updateTrack(input);
+    });
+
+    ipcMain.handle('tracks:remove', async (_, input) => {
+      const useCase = this.container.get<ManageTrack>(TYPES.ManageTrack);
+      return await useCase.removeTrack(input);
+    });
+
+    ipcMain.handle('tracks:clear', async () => {
+      const useCase = this.container.get<ManageTrack>(TYPES.ManageTrack);
+      return await useCase.clearAllTracks();
     });
 
     // Config
