@@ -23,6 +23,8 @@ import { IOscOutputService } from '@domain/services/IOscOutputService';
  * Routes IPC calls from renderer to use cases
  */
 export class IpcHandlers {
+  private webContents: Electron.WebContents | null = null;
+
   constructor(private container: Container) {}
 
   register(): void {
@@ -61,6 +63,15 @@ export class IpcHandlers {
     // Learn Mode
     ipcMain.handle('learn:start', async (_, input) => {
       const useCase = this.container.get<StartLearnMode>(TYPES.StartLearnMode);
+      
+      // Set up callback to notify UI when learn mode completes
+      useCase.setOnLearnComplete(() => {
+        if (this.webContents) {
+          console.log('=== LEARN MODE: Notifying UI of completion ===');
+          this.webContents.send('learn:complete');
+        }
+      });
+      
       return await useCase.execute(input);
     });
 
@@ -115,6 +126,8 @@ export class IpcHandlers {
    * Set up MIDI input processing
    */
   setupMidiProcessing(webContents: Electron.WebContents): void {
+    this.webContents = webContents;
+    
     const midiService = this.container.get<IMidiInputService>(TYPES.MidiInputService);
     const processMidiInput = this.container.get<ProcessMidiInput>(TYPES.ProcessMidiInput);
 

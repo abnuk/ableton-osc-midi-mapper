@@ -27,7 +27,11 @@ contextBridge.exposeInMainWorld('api', {
   learn: {
     start: (input: any) => ipcRenderer.invoke('learn:start', input),
     stop: () => ipcRenderer.invoke('learn:stop'),
-    isActive: () => ipcRenderer.invoke('learn:isActive')
+    isActive: () => ipcRenderer.invoke('learn:isActive'),
+    onComplete: (callback: () => void) => {
+      ipcRenderer.on('learn:complete', () => callback());
+      return () => ipcRenderer.removeAllListeners('learn:complete');
+    }
   },
 
   // Tracks
@@ -65,6 +69,7 @@ export interface ElectronAPI {
     start: (input: any) => Promise<any>;
     stop: () => Promise<any>;
     isActive: () => Promise<boolean>;
+    onComplete: (callback: () => void) => () => void;
   };
   tracks: {
     fetch: (forceRefresh?: boolean) => Promise<any>;

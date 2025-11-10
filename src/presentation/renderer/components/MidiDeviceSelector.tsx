@@ -22,20 +22,39 @@ const MidiDeviceSelector: React.FC<MidiDeviceSelectorProps> = ({ onDeviceSelecte
 
   const autoSelectAllDevices = async () => {
     try {
+      console.log('=== UI: autoSelectAllDevices called ===');
       const result = await window.api.midi.getDevices();
+      console.log('=== UI: getDevices result ===', result);
+      
       if (result.success) {
-        const devices = result.value.currentDevices || (result.value as any).currentDevice ? [((result.value as any).currentDevice)] : [];
-        // If no devices are connected, auto-select "All Devices"
-        if (devices.length === 0) {
-          console.log('Auto-selecting all devices...');
+        // Get current devices array
+        let currentDevices: string[] = [];
+        if (Array.isArray(result.value.currentDevices)) {
+          currentDevices = result.value.currentDevices;
+        } else if ((result.value as any).currentDevice) {
+          currentDevices = [(result.value as any).currentDevice];
+        }
+        
+        console.log('=== UI: currentDevices ===', currentDevices);
+        
+        // If no devices are currently connected, auto-select "All Devices"
+        if (currentDevices.length === 0) {
+          console.log('=== UI: Auto-selecting all devices... ===');
           const selectResult = await window.api.midi.selectDevice({ deviceName: 'all' });
+          console.log('=== UI: selectDevice result ===', selectResult);
+          
           if (selectResult.success) {
+            console.log('=== UI: All devices selected successfully ===');
             await loadDevices();
+          } else {
+            console.error('=== UI: Failed to auto-select all devices ===', selectResult.error);
           }
+        } else {
+          console.log('=== UI: Devices already connected, skipping auto-select ===');
         }
       }
     } catch (error) {
-      console.error('Failed to auto-select all devices:', error);
+      console.error('=== UI: Failed to auto-select all devices ===', error);
     }
   };
 

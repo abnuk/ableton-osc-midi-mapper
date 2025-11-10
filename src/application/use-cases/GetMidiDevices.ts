@@ -30,6 +30,11 @@ export class GetMidiDevices {
 
       const currentDevices = this.midiService.getCurrentDevices();
 
+      console.log('=== GET MIDI DEVICES ===', {
+        availableDevices: devicesWithAll.length,
+        currentDevices: currentDevices
+      });
+
       return success({
         devices: devicesWithAll,
         currentDevices: currentDevices

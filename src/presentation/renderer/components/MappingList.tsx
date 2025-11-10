@@ -14,6 +14,14 @@ const MappingList: React.FC = () => {
 
   useEffect(() => {
     loadMappings();
+    
+    // Listen for learn mode completion
+    const unsubscribe = window.api.learn.onComplete(() => {
+      console.log('=== UI: Learn mode completed, reloading mappings ===');
+      loadMappings();
+    });
+    
+    return () => unsubscribe();
   }, []);
 
   const loadMappings = async () => {

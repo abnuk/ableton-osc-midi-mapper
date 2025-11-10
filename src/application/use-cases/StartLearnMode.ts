@@ -15,11 +15,19 @@ export class StartLearnMode {
   private isLearning = false;
   private learnCallback: ((message: MidiMessage, sourceDevice: string) => void) | null = null;
   private pendingCommand: StartLearnModeInput | null = null;
+  private onLearnCompleteCallback: (() => void) | null = null;
 
   constructor(
     @inject(TYPES.MidiInputService) private readonly midiService: IMidiInputService,
     @inject(TYPES.CreateMapping) private readonly createMapping: CreateMapping
   ) {}
+
+  /**
+   * Set callback to be called when learn mode completes
+   */
+  setOnLearnComplete(callback: () => void): void {
+    this.onLearnCompleteCallback = callback;
+  }
 
   async execute(input: StartLearnModeInput): Promise<Result<void, string>> {
     if (this.isLearning) {
@@ -44,30 +52,51 @@ export class StartLearnMode {
       return;
     }
 
-    // Stop learning
+    console.log('=== LEARN MODE: Received MIDI message ===', { 
+      message: MidiMessage.toString(message), 
+      sourceDevice 
+    });
+
+    // Save pending command before stopping (stopLearning clears it)
+    const commandToMap = this.pendingCommand;
+
+    // Stop learning (removes handler and clears state)
     this.stopLearning();
 
     // Create mapping name
-    const mappingName = `MIDI ${MidiMessage.toString(message)} → ${this.pendingCommand.commandAddress}`;
+    const mappingName = `MIDI ${MidiMessage.toString(message)} → ${commandToMap.commandAddress}`;
 
     // Create trigger from MIDI message
     const trigger = this.createTriggerFromMessage(message);
+
+    console.log('=== LEARN MODE: Creating mapping ===', {
+      name: mappingName,
+      trigger,
+      sourceDevice
+    });
 
     // Create the mapping
     const createResult = await this.createMapping.execute({
       name: mappingName,
       trigger,
       command: {
-        address: this.pendingCommand.commandAddress,
-        parameters: this.pendingCommand.commandParameters
+        address: commandToMap.commandAddress,
+        parameters: commandToMap.commandParameters
       },
-      parameterMappings: this.pendingCommand.parameterMappings,
+      parameterMappings: commandToMap.parameterMappings,
       enabled: true,
       midiDevice: sourceDevice  // Assign to source device
     });
 
     if (createResult.isFailure()) {
       console.error('Failed to create learned mapping:', createResult.error);
+    } else {
+      console.log('=== LEARN MODE: Mapping created successfully ===', createResult.value);
+      
+      // Notify that learn mode is complete
+      if (this.onLearnCompleteCallback) {
+        this.onLearnCompleteCallback();
+      }
     }
   }
 

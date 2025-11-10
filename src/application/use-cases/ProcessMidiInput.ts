@@ -21,6 +21,11 @@ export class ProcessMidiInput {
 
   async execute(message: MidiMessage, sourceDevice: string): Promise<Result<void, string>> {
     try {
+      console.log('=== PROCESS MIDI INPUT: Processing message ===', {
+        message: message.type,
+        sourceDevice
+      });
+      
       // Get all mappings
       const mappingsResult = await this.mappingRepository.getAll();
 
@@ -28,8 +33,12 @@ export class ProcessMidiInput {
         return failure(`Failed to get mappings: ${mappingsResult.error.message}`);
       }
 
+      console.log(`=== PROCESS MIDI INPUT: Found ${mappingsResult.value.length} total mappings ===`);
+
       // Find matching mappings (pass source device for filtering)
       const matchingMappings = mappingsResult.value.filter(mapping => mapping.matches(message, sourceDevice));
+
+      console.log(`=== PROCESS MIDI INPUT: ${matchingMappings.length} matching mappings ===`);
 
       // Execute each matching mapping
       for (const mapping of matchingMappings) {
@@ -56,6 +65,7 @@ export class ProcessMidiInput {
       return success(undefined);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('=== PROCESS MIDI INPUT: Error ===', errorMessage);
       return failure(`Failed to process MIDI input: ${errorMessage}`);
     }
   }

@@ -20,6 +20,7 @@ interface SerializedMapping {
   };
   parameterMappings: any[];
   enabled: boolean;
+  midiDevice: string | null;
 }
 
 /**
@@ -164,7 +165,8 @@ export class InMemoryMappingRepository implements IMappingRepository {
       },
       command: mapping.command.toJSON(),
       parameterMappings: [...mapping.parameterMappings],
-      enabled: mapping.enabled
+      enabled: mapping.enabled,
+      midiDevice: mapping.midiDevice
     };
   }
 
@@ -179,7 +181,8 @@ export class InMemoryMappingRepository implements IMappingRepository {
       trigger,
       command,
       serialized.parameterMappings,
-      serialized.enabled
+      serialized.enabled,
+      serialized.midiDevice || null
     );
   }
 }

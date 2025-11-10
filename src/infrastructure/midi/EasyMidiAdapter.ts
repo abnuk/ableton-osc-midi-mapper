@@ -18,6 +18,9 @@ export class EasyMidiAdapter implements IMidiInputService {
     try {
       await this.ensureInitialized();
       
+      // Force JZZ to refresh the list of MIDI devices
+      await JZZ().refresh();
+      
       const info = await JZZ().info();
       const devices: MidiDeviceInfo[] = info.inputs.map((input: any, index: number) => ({
         name: input.name,
@@ -35,12 +38,16 @@ export class EasyMidiAdapter implements IMidiInputService {
     try {
       await this.ensureInitialized();
 
+      console.log(`=== MIDI ADAPTER: Opening device "${deviceName}" ===`);
+
       // Special case: open all devices
       if (deviceName === 'all') {
         const devicesResult = await this.getDevices();
         if (devicesResult.isFailure()) {
           return failure(devicesResult.error);
         }
+
+        console.log(`=== MIDI ADAPTER: Opening all ${devicesResult.value.length} devices ===`);
 
         // Open all available devices
         for (const device of devicesResult.value) {
@@ -55,6 +62,7 @@ export class EasyMidiAdapter implements IMidiInputService {
       return await this.openSingleDevice(deviceName);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`=== MIDI ADAPTER: Failed to open device "${deviceName}" ===`, errorMessage);
       return failure(new Error(`Failed to open MIDI device: ${errorMessage}`));
     }
   }
@@ -120,10 +128,12 @@ export class EasyMidiAdapter implements IMidiInputService {
 
   onMessage(handler: MidiInputHandler): void {
     this.handlers.add(handler);
+    console.log(`=== MIDI ADAPTER: Handler added, total handlers: ${this.handlers.size} ===`);
   }
 
   offMessage(handler: MidiInputHandler): void {
     this.handlers.delete(handler);
+    console.log(`=== MIDI ADAPTER: Handler removed, total handlers: ${this.handlers.size} ===`);
   }
 
   removeAllHandlers(): void {
@@ -176,6 +186,11 @@ export class EasyMidiAdapter implements IMidiInputService {
   }
 
   private notifyHandlers(message: MidiMessage, sourceDevice: string): void {
+    console.log(`=== MIDI ADAPTER: Notifying ${this.handlers.size} handlers ===`, {
+      message: MidiMessage.toString(message),
+      sourceDevice
+    });
+    
     this.handlers.forEach(handler => {
       try {
         handler(message, sourceDevice);
