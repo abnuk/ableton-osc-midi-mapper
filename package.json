@@ -1,6 +1,6 @@
 {
   "name": "ableton-osc-midi-mapper",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MIDI to Ableton OSC Mapper with Clean Architecture",
   "main": "dist/main/index.js",
   "scripts": {
