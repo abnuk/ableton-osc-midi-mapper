@@ -1,14 +1,32 @@
 {
   "appId": "com.abletonosc.midimapper",
   "productName": "Ableton OSC MIDI Mapper",
+  "icon": "build/icon.png",
   "directories": {
     "output": "release",
-    "buildResources": "resources"
+    "buildResources": "build"
   },
   "files": [
     "dist/**/*",
+    "build/icon.ico",
+    "build/icon.icns",
+    "build/icon.png",
     "package.json",
     "node_modules/**/*"
+  ],
+  "extraResources": [
+    {
+      "from": "build/icon.ico",
+      "to": "icon.ico"
+    },
+    {
+      "from": "build/icon.icns",
+      "to": "icon.icns"
+    },
+    {
+      "from": "build/icon.png",
+      "to": "icon.png"
+    }
   ],
   "asarUnpack": [
     "node_modules/**/*.node"
@@ -16,26 +34,21 @@
   "mac": {
     "target": ["dmg", "zip"],
     "category": "public.app-category.music",
-    "type": "agent",
-    "extendInfo": {
-      "LSUIElement": 1
-    }
+    "icon": "build/icon.icns"
   },
   "win": {
     "target": [
       {
         "target": "nsis",
         "arch": ["x64"]
-      },
-      {
-        "target": "portable",
-        "arch": ["x64"]
       }
-    ]
+    ],
+    "icon": "build/icon.ico"
   },
   "nsis": {
     "oneClick": false,
-    "allowToChangeInstallationDirectory": true
+    "allowToChangeInstallationDirectory": true,
+    "include": "build/installer.nsh",
+    "allowElevation": true
   }
 }
-

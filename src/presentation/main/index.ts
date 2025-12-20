@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, nativeImage } from 'electron';
 import * as path from 'path';
 import { createContainer } from './di-container';
 import { TrayController } from './tray-controller';
@@ -11,6 +11,78 @@ let mainWindow: BrowserWindow | null = null;
 let trayController: TrayController | null = null;
 
 /**
+ * Set macOS Dock icon (especially important for development mode)
+ */
+function setDockIcon(): void {
+  if (process.platform !== 'darwin') return;
+  
+  // Try multiple icon paths in order of preference
+  const iconPaths: string[] = [];
+  
+  if (app.isPackaged) {
+    // In packaged app, try icns first, then png
+    iconPaths.push(path.join(process.resourcesPath, 'icon.icns'));
+    iconPaths.push(path.join(process.resourcesPath, 'icon.png'));
+  } else {
+    // Development mode - load from build folder
+    iconPaths.push(path.join(__dirname, '../../..', 'build', 'icon.icns'));
+    iconPaths.push(path.join(__dirname, '../../..', 'build', 'icon.png'));
+  }
+  
+  for (const iconPath of iconPaths) {
+    try {
+      const icon = nativeImage.createFromPath(iconPath);
+      if (!icon.isEmpty()) {
+        app.dock.setIcon(icon);
+        console.log('🖼️ Dock icon set from:', iconPath);
+        return;
+      }
+    } catch (error) {
+      // Try next path
+    }
+  }
+  
+  console.warn('⚠️ Could not set Dock icon from any path');
+}
+
+/**
+ * Get app icon for window (works on both platforms)
+ */
+function getAppIcon(): Electron.NativeImage | undefined {
+  const iconPaths: string[] = [];
+  
+  if (app.isPackaged) {
+    if (process.platform === 'win32') {
+      iconPaths.push(path.join(process.resourcesPath, 'icon.ico'));
+    } else {
+      iconPaths.push(path.join(process.resourcesPath, 'icon.icns'));
+    }
+    iconPaths.push(path.join(process.resourcesPath, 'icon.png'));
+  } else {
+    // Development mode
+    if (process.platform === 'win32') {
+      iconPaths.push(path.join(__dirname, '../../..', 'build', 'icon.ico'));
+    } else {
+      iconPaths.push(path.join(__dirname, '../../..', 'build', 'icon.icns'));
+    }
+    iconPaths.push(path.join(__dirname, '../../..', 'build', 'icon.png'));
+  }
+  
+  for (const iconPath of iconPaths) {
+    try {
+      const icon = nativeImage.createFromPath(iconPath);
+      if (!icon.isEmpty()) {
+        return icon;
+      }
+    } catch (error) {
+      // Try next path
+    }
+  }
+  
+  return undefined;
+}
+
+/**
  * Create the main window
  */
 function createWindow(): void {
@@ -18,7 +90,7 @@ function createWindow(): void {
     width: 1200,
     height: 800,
     show: false, // Don't show until ready
-    skipTaskbar: true, // Don't show in taskbar/dock
+    icon: getAppIcon(),
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -41,7 +113,7 @@ function createWindow(): void {
 
   // Prevent window from closing, just hide it instead
   mainWindow.on('close', (event) => {
-    if (!app.isQuitting) {
+    if (!(app as any).isQuitting) {
       event.preventDefault();
       mainWindow?.hide();
     }
@@ -82,16 +154,6 @@ async function initialize(): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, 100));
   }
 
-  // Now hide dock icon on macOS - AFTER tray is created
-  if (process.platform === 'darwin') {
-    console.log('=== HIDING DOCK ICON ===');
-    try {
-      app.dock.hide();
-      console.log('=== DOCK ICON HIDDEN ===');
-    } catch (error) {
-      console.error('Error hiding dock:', error);
-    }
-  }
 
   // Connect to OSC on startup
   try {
@@ -119,7 +181,14 @@ async function initialize(): Promise<void> {
 /**
  * App lifecycle
  */
-app.whenReady().then(initialize);
+app.whenReady().then(() => {
+  console.log('🎬 Electron app is ready');
+  
+  // Set dock icon first (macOS)
+  setDockIcon();
+  
+  initialize();
+});
 
 app.on('before-quit', () => {
   (app as any).isQuitting = true;

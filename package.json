@@ -3,39 +3,71 @@
   "version": "1.0.0",
   "description": "MIDI to Ableton OSC Mapper with Clean Architecture",
   "main": "dist/main/index.js",
-  "build": {
-    "appId": "com.abletonosc.midimapper",
-    "productName": "Ableton OSC MIDI Mapper",
-    "directories": {
-      "output": "release",
-      "buildResources": "resources"
-    },
-    "files": [
-      "dist/**/*",
-      "package.json",
-      "node_modules/**/*"
-    ],
-    "asarUnpack": [
-      "node_modules/**/*.node"
-    ],
-    "mac": {
-      "target": ["dmg", "zip"],
-      "category": "public.app-category.music",
-      "type": "distribution",
-      "extendInfo": {
-        "LSUIElement": 1
-      }
-    }
-  },
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "start": "electron-vite preview",
-    "package:mac": "electron-builder --mac",
-    "package:win": "electron-builder --win",
+    "generate-icons": "node scripts/generate-icon.js",
+    "package:mac": "npm run generate-icons && electron-builder --mac",
+    "package:win": "npm run generate-icons && electron-builder --win",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx"
+  },
+  "build": {
+    "appId": "com.abletonosc.midimapper",
+    "productName": "Ableton OSC MIDI Mapper",
+    "icon": "build/icon.png",
+    "mac": {
+      "category": "public.app-category.music",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "build/icon.icns"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "include": "build/installer.nsh",
+      "allowElevation": true
+    },
+    "npmRebuild": false,
+    "files": [
+      "dist/**/*",
+      "build/icon.ico",
+      "build/icon.icns",
+      "build/icon.png",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "build/icon.ico",
+        "to": "icon.ico"
+      },
+      {
+        "from": "build/icon.icns",
+        "to": "icon.icns"
+      },
+      {
+        "from": "build/icon.png",
+        "to": "icon.png"
+      }
+    ],
+    "directories": {
+      "output": "release"
+    }
   },
   "dependencies": {
     "electron-store": "^8.1.0",
@@ -61,6 +93,7 @@
     "eslint": "^8.56.0",
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
+    "png-to-ico": "^3.0.1",
     "typescript": "^5.3.3",
     "vite": "^5.0.12"
   },
