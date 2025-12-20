@@ -26,6 +26,13 @@ export class SelectMidiDevice {
         }
       }
 
+      // If deviceName is empty, just disconnect (don't open any device)
+      if (!input.deviceName) {
+        // Clear saved device from config
+        await this.configRepository.setValue('selectedMidiDevice', '');
+        return success(undefined);
+      }
+
       // Open new device
       const openResult = await this.midiService.openDevice(input.deviceName);
 

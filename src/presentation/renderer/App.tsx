@@ -69,7 +69,10 @@ const App: React.FC = () => {
         <aside className="sidebar">
           <div className="sidebar-section">
             <h2>MIDI Input</h2>
-            <MidiDeviceSelector onDeviceSelected={() => setMidiConnected(true)} />
+            <MidiDeviceSelector 
+              onDeviceSelected={() => setMidiConnected(true)} 
+              onDeviceDisconnected={() => setMidiConnected(false)}
+            />
           </div>
         </aside>
 

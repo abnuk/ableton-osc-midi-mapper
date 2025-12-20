@@ -7,56 +7,20 @@ interface MidiDevice {
 
 interface MidiDeviceSelectorProps {
   onDeviceSelected?: () => void;
+  onDeviceDisconnected?: () => void;
 }
 
-const MidiDeviceSelector: React.FC<MidiDeviceSelectorProps> = ({ onDeviceSelected }) => {
+const MidiDeviceSelector: React.FC<MidiDeviceSelectorProps> = ({ onDeviceSelected, onDeviceDisconnected }) => {
   const [devices, setDevices] = useState<MidiDevice[]>([]);
   const [selectedDevices, setSelectedDevices] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadDevices();
-    // Auto-select "All Devices" on first load
-    autoSelectAllDevices();
+    // Don't auto-select any device on startup - let user choose
+    // This prevents blocking MIDI devices on Windows
   }, []);
-
-  const autoSelectAllDevices = async () => {
-    try {
-      console.log('=== UI: autoSelectAllDevices called ===');
-      const result = await window.api.midi.getDevices();
-      console.log('=== UI: getDevices result ===', result);
-      
-      if (result.success) {
-        // Get current devices array
-        let currentDevices: string[] = [];
-        if (Array.isArray(result.value.currentDevices)) {
-          currentDevices = result.value.currentDevices;
-        } else if ((result.value as any).currentDevice) {
-          currentDevices = [(result.value as any).currentDevice];
-        }
-        
-        console.log('=== UI: currentDevices ===', currentDevices);
-        
-        // If no devices are currently connected, auto-select "All Devices"
-        if (currentDevices.length === 0) {
-          console.log('=== UI: Auto-selecting all devices... ===');
-          const selectResult = await window.api.midi.selectDevice({ deviceName: 'all' });
-          console.log('=== UI: selectDevice result ===', selectResult);
-          
-          if (selectResult.success) {
-            console.log('=== UI: All devices selected successfully ===');
-            await loadDevices();
-          } else {
-            console.error('=== UI: Failed to auto-select all devices ===', selectResult.error);
-          }
-        } else {
-          console.log('=== UI: Devices already connected, skipping auto-select ===');
-        }
-      }
-    } catch (error) {
-      console.error('=== UI: Failed to auto-select all devices ===', error);
-    }
-  };
 
   const loadDevices = async () => {
     setLoading(true);
@@ -88,6 +52,8 @@ const MidiDeviceSelector: React.FC<MidiDeviceSelectorProps> = ({ onDeviceSelecte
     if (!value) return;
     
     setLoading(true);
+    setError(null);
+    
     try {
       const result = await window.api.midi.selectDevice({ deviceName: value });
       
@@ -95,11 +61,36 @@ const MidiDeviceSelector: React.FC<MidiDeviceSelectorProps> = ({ onDeviceSelecte
         onDeviceSelected?.();
         await loadDevices(); // Reload to get updated device list
       } else {
-        alert('Failed to select device: ' + result.error);
+        // Show error message - device might be blocked by another application
+        const errorMsg = result.error || 'Failed to open device';
+        setError(errorMsg.includes('Failed to open') 
+          ? 'Device is unavailable. It may be in use by another application.' 
+          : errorMsg);
+        // Reload devices to reset the selection
+        await loadDevices();
       }
     } catch (error) {
       console.error('Failed to select MIDI device:', error);
-      alert('Failed to select device');
+      setError('Failed to select device. It may be in use by another application.');
+      await loadDevices();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Close all devices by selecting nothing (we need a new IPC for this)
+      const result = await window.api.midi.selectDevice({ deviceName: '' });
+      if (result.success) {
+        setSelectedDevices([]);
+        onDeviceDisconnected?.();
+      }
+      await loadDevices();
+    } catch (error) {
+      console.error('Failed to disconnect MIDI device:', error);
     } finally {
       setLoading(false);
     }
@@ -115,6 +106,8 @@ const MidiDeviceSelector: React.FC<MidiDeviceSelectorProps> = ({ onDeviceSelecte
     }
   }
 
+  const hasDeviceSelected = selectedDevices && selectedDevices.length > 0;
+
   return (
     <div>
       <select
@@ -124,30 +117,60 @@ const MidiDeviceSelector: React.FC<MidiDeviceSelectorProps> = ({ onDeviceSelecte
         disabled={loading}
         style={{ width: '100%' }}
       >
+        <option value="" disabled={hasDeviceSelected}>
+          Select MIDI device...
+        </option>
         {devices.map((device) => (
           <option key={device.id} value={device.id === 'all' ? 'all' : device.name}>
             {device.name}
           </option>
         ))}
       </select>
-      {selectedDevices && selectedDevices.length > 0 && (
+      
+      {error && (
+        <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#f87171', padding: '0.5rem', backgroundColor: 'rgba(248, 113, 113, 0.1)', borderRadius: '4px' }}>
+          ⚠ {error}
+        </div>
+      )}
+      
+      {hasDeviceSelected && (
         <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#4ade80' }}>
           ✓ Connected: {selectedDevices.length === 1 ? selectedDevices[0] : `${selectedDevices.length} devices`}
         </div>
       )}
-      {devices.length === 1 && !loading && (
+      
+      {!hasDeviceSelected && !error && (
+        <div style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#888' }}>
+          No device selected. Select a device to start listening for MIDI.
+        </div>
+      )}
+      
+      {devices.length <= 1 && !loading && (
         <p style={{ marginTop: '0.5rem', fontSize: '0.875rem', color: '#888' }}>
           No MIDI devices found
         </p>
       )}
-      <button
-        className="btn btn-secondary"
-        onClick={loadDevices}
-        style={{ marginTop: '0.5rem', width: '100%' }}
-        disabled={loading}
-      >
-        {loading ? 'Refreshing...' : 'Refresh Devices'}
-      </button>
+      
+      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+        <button
+          className="btn btn-secondary"
+          onClick={loadDevices}
+          style={{ flex: 1 }}
+          disabled={loading}
+        >
+          {loading ? 'Refreshing...' : 'Refresh'}
+        </button>
+        {hasDeviceSelected && (
+          <button
+            className="btn btn-secondary"
+            onClick={handleDisconnect}
+            style={{ flex: 1 }}
+            disabled={loading}
+          >
+            Disconnect
+          </button>
+        )}
+      </div>
     </div>
   );
 };
