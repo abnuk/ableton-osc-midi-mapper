@@ -7,8 +7,30 @@ import { IOscOutputService } from '@domain/services/IOscOutputService';
 import { IConfigRepository } from '@domain/repositories/IConfigRepository';
 import { TYPES } from '@shared/types/DITypes';
 
+// Request single instance lock - only one app instance can run at a time
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  // Another instance is already running - quit immediately
+  console.log('⚠️ Another instance is already running. Quitting...');
+  app.quit();
+}
+
 let mainWindow: BrowserWindow | null = null;
 let trayController: TrayController | null = null;
+
+// Handle second instance - show and focus the main window
+app.on('second-instance', (_event, _commandLine, _workingDirectory) => {
+  console.log('🔄 Second instance detected - focusing existing window');
+  
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) {
+      mainWindow.restore();
+    }
+    mainWindow.show();
+    mainWindow.focus();
+  }
+});
 
 /**
  * Set macOS Dock icon (especially important for development mode)
@@ -179,40 +201,42 @@ async function initialize(): Promise<void> {
 }
 
 /**
- * App lifecycle
+ * App lifecycle - only initialize if we got the single instance lock
  */
-app.whenReady().then(() => {
-  console.log('🎬 Electron app is ready');
-  
-  // Set dock icon first (macOS)
-  setDockIcon();
-  
-  initialize();
-});
+if (gotTheLock) {
+  app.whenReady().then(() => {
+    console.log('🎬 Electron app is ready');
+    
+    // Set dock icon first (macOS)
+    setDockIcon();
+    
+    initialize();
+  });
 
-app.on('before-quit', () => {
-  (app as any).isQuitting = true;
-});
+  app.on('before-quit', () => {
+    (app as any).isQuitting = true;
+  });
 
-app.on('window-all-closed', () => {
-  // Keep app running on macOS
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
+  app.on('window-all-closed', () => {
+    // Keep app running on macOS
+    if (process.platform !== 'darwin') {
+      app.quit();
+    }
+  });
 
-app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  } else if (mainWindow) {
-    mainWindow.show();
-  }
-});
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createWindow();
+    } else if (mainWindow) {
+      mainWindow.show();
+    }
+  });
 
-// Handle cleanup
-app.on('will-quit', () => {
-  if (trayController) {
-    trayController.destroy();
-  }
-});
+  // Handle cleanup
+  app.on('will-quit', () => {
+    if (trayController) {
+      trayController.destroy();
+    }
+  });
+}
 
