@@ -74,10 +74,6 @@ export class ProcessMidiInput {
     paramMapping: { 
       parameterIndex: number; 
       substitution: ParameterSubstitution; 
-      trackIndex?: number;
-      clipIndex?: number;
-      sceneIndex?: number;
-      deviceIndex?: number;
       staticValue?: number | string | boolean;
     },
     message: MidiMessage
@@ -101,18 +97,6 @@ export class ProcessMidiInput {
           return message.data.normalizedValue;
         }
         return null;
-
-      case ParameterSubstitution.TRACK_INDEX:
-        return paramMapping.trackIndex ?? null;
-
-      case ParameterSubstitution.CLIP_INDEX:
-        return paramMapping.clipIndex ?? null;
-
-      case ParameterSubstitution.SCENE_INDEX:
-        return paramMapping.sceneIndex ?? null;
-
-      case ParameterSubstitution.DEVICE_INDEX:
-        return paramMapping.deviceIndex ?? null;
 
       case ParameterSubstitution.STATIC_VALUE:
         return paramMapping.staticValue ?? null;

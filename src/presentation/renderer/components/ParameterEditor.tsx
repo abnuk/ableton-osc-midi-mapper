@@ -13,11 +13,50 @@ const ParameterEditor: React.FC<ParameterEditorProps> = ({
   parameterMappings, 
   onChange 
 }) => {
-  const [mappings, setMappings] = useState<ParameterMapping[]>(parameterMappings);
+  const getDefaultValue = (paramType: OscParameterType): number | string | boolean => {
+    switch (paramType) {
+      case OscParameterType.BOOLEAN:
+        return false;
+      case OscParameterType.STRING:
+        return '';
+      default:
+        return 0;
+    }
+  };
+
+  // Initialize mappings with defaults for all parameters
+  const initializeMappings = (existingMappings: ParameterMapping[]): ParameterMapping[] => {
+    const result: ParameterMapping[] = [];
+    
+    for (let i = 0; i < parameters.length; i++) {
+      const existing = existingMappings.find(m => m.parameterIndex === i);
+      if (existing) {
+        result.push(existing);
+      } else {
+        // Create default mapping with STATIC_VALUE
+        result.push({
+          parameterIndex: i,
+          substitution: ParameterSubstitution.STATIC_VALUE,
+          staticValue: getDefaultValue(parameters[i].type)
+        });
+      }
+    }
+    
+    return result;
+  };
+
+  const [mappings, setMappings] = useState<ParameterMapping[]>(() => 
+    initializeMappings(parameterMappings)
+  );
 
   useEffect(() => {
-    setMappings(parameterMappings);
-  }, [parameterMappings]);
+    const initialized = initializeMappings(parameterMappings);
+    setMappings(initialized);
+    // Notify parent of initialized mappings if they were missing
+    if (parameterMappings.length === 0 && initialized.length > 0) {
+      onChange(initialized);
+    }
+  }, [parameterMappings, parameters]);
 
   const getMapping = (paramIndex: number): ParameterMapping | undefined => {
     return mappings.find(m => m.parameterIndex === paramIndex);
@@ -53,39 +92,31 @@ const ParameterEditor: React.FC<ParameterEditorProps> = ({
   };
 
   const getSubstitutionOptions = (paramType: OscParameterType): ParameterSubstitution[] => {
-    const baseOptions = [ParameterSubstitution.NONE, ParameterSubstitution.STATIC_VALUE];
-    
     switch (paramType) {
       case OscParameterType.INTEGER:
+      case OscParameterType.BOOLEAN:
         return [
-          ...baseOptions,
-          ParameterSubstitution.VELOCITY,
-          ParameterSubstitution.TRACK_INDEX,
-          ParameterSubstitution.CLIP_INDEX,
-          ParameterSubstitution.SCENE_INDEX,
-          ParameterSubstitution.DEVICE_INDEX
+          ParameterSubstitution.STATIC_VALUE,
+          ParameterSubstitution.VELOCITY
         ];
       
       case OscParameterType.FLOAT:
         return [
-          ...baseOptions,
+          ParameterSubstitution.STATIC_VALUE,
           ParameterSubstitution.VELOCITY,
           ParameterSubstitution.VELOCITY_NORMALIZED
         ];
       
-      case OscParameterType.BOOLEAN:
-        return [
-          ...baseOptions,
-          ParameterSubstitution.VELOCITY
-        ];
-      
       case OscParameterType.STRING:
         return [
-          ...baseOptions
+          ParameterSubstitution.STATIC_VALUE
         ];
       
       default:
-        return baseOptions;
+        return [
+          ParameterSubstitution.STATIC_VALUE,
+          ParameterSubstitution.VELOCITY
+        ];
     }
   };
 
@@ -94,152 +125,60 @@ const ParameterEditor: React.FC<ParameterEditorProps> = ({
       [ParameterSubstitution.NONE]: 'None',
       [ParameterSubstitution.VELOCITY]: 'MIDI Velocity/Value',
       [ParameterSubstitution.VELOCITY_NORMALIZED]: 'MIDI Velocity (0-1)',
-      [ParameterSubstitution.TRACK_INDEX]: 'Track Index',
-      [ParameterSubstitution.CLIP_INDEX]: 'Clip Index',
-      [ParameterSubstitution.SCENE_INDEX]: 'Scene Index',
-      [ParameterSubstitution.DEVICE_INDEX]: 'Device Index',
       [ParameterSubstitution.STATIC_VALUE]: 'Static Value'
     };
     return labels[sub] || sub;
   };
 
   const renderValueInput = (paramIndex: number, param: OscParameterDef, mapping: ParameterMapping | undefined) => {
-    if (!mapping || mapping.substitution === ParameterSubstitution.NONE) {
+    if (!mapping || mapping.substitution !== ParameterSubstitution.STATIC_VALUE) {
       return null;
     }
 
-    switch (mapping.substitution) {
-      case ParameterSubstitution.STATIC_VALUE:
-        return (
-          <div style={{ marginTop: '0.5rem' }}>
-            <label style={{ fontSize: '0.875rem', display: 'block', marginBottom: '0.25rem' }}>
-              Value:
-            </label>
-            {param.type === OscParameterType.BOOLEAN ? (
-              <select
-                className="select"
-                value={String(mapping.staticValue ?? false)}
-                onChange={(e) => updateMapping(paramIndex, { 
-                  staticValue: e.target.value === 'true' 
-                })}
-              >
-                <option value="false">False (0)</option>
-                <option value="true">True (1)</option>
-              </select>
-            ) : param.type === OscParameterType.STRING ? (
-              <input
-                type="text"
-                className="input"
-                value={String(mapping.staticValue ?? '')}
-                onChange={(e) => updateMapping(paramIndex, { 
-                  staticValue: e.target.value 
-                })}
-              />
-            ) : (
-              <input
-                type="number"
-                className="input"
-                value={Number(mapping.staticValue ?? 0)}
-                min={param.min}
-                max={param.max}
-                step={param.type === OscParameterType.FLOAT ? '0.01' : '1'}
-                onChange={(e) => updateMapping(paramIndex, { 
-                  staticValue: param.type === OscParameterType.FLOAT 
-                    ? parseFloat(e.target.value) 
-                    : parseInt(e.target.value) 
-                })}
-              />
-            )}
-          </div>
-        );
-
-      case ParameterSubstitution.TRACK_INDEX:
-        return (
-          <div style={{ marginTop: '0.5rem' }}>
-            <label style={{ fontSize: '0.875rem', display: 'block', marginBottom: '0.25rem' }}>
-              Track Index:
-            </label>
-            <input
-              type="number"
-              className="input"
-              value={mapping.trackIndex !== undefined ? mapping.trackIndex : 0}
-              min={0}
-              onChange={(e) => {
-                const value = parseInt(e.target.value);
-                updateMapping(paramIndex, { 
-                  trackIndex: isNaN(value) ? 0 : value
-                });
-              }}
-            />
-          </div>
-        );
-
-      case ParameterSubstitution.CLIP_INDEX:
-        return (
-          <div style={{ marginTop: '0.5rem' }}>
-            <label style={{ fontSize: '0.875rem', display: 'block', marginBottom: '0.25rem' }}>
-              Clip Index:
-            </label>
-            <input
-              type="number"
-              className="input"
-              value={mapping.clipIndex !== undefined ? mapping.clipIndex : 0}
-              min={0}
-              onChange={(e) => {
-                const value = parseInt(e.target.value);
-                updateMapping(paramIndex, { 
-                  clipIndex: isNaN(value) ? 0 : value
-                });
-              }}
-            />
-          </div>
-        );
-
-      case ParameterSubstitution.SCENE_INDEX:
-        return (
-          <div style={{ marginTop: '0.5rem' }}>
-            <label style={{ fontSize: '0.875rem', display: 'block', marginBottom: '0.25rem' }}>
-              Scene Index:
-            </label>
-            <input
-              type="number"
-              className="input"
-              value={mapping.sceneIndex !== undefined ? mapping.sceneIndex : 0}
-              min={0}
-              onChange={(e) => {
-                const value = parseInt(e.target.value);
-                updateMapping(paramIndex, { 
-                  sceneIndex: isNaN(value) ? 0 : value
-                });
-              }}
-            />
-          </div>
-        );
-
-      case ParameterSubstitution.DEVICE_INDEX:
-        return (
-          <div style={{ marginTop: '0.5rem' }}>
-            <label style={{ fontSize: '0.875rem', display: 'block', marginBottom: '0.25rem' }}>
-              Device Index:
-            </label>
-            <input
-              type="number"
-              className="input"
-              value={mapping.deviceIndex !== undefined ? mapping.deviceIndex : 0}
-              min={0}
-              onChange={(e) => {
-                const value = parseInt(e.target.value);
-                updateMapping(paramIndex, { 
-                  deviceIndex: isNaN(value) ? 0 : value
-                });
-              }}
-            />
-          </div>
-        );
-
-      default:
-        return null;
-    }
+    return (
+      <div style={{ marginTop: '0.5rem' }}>
+        <label style={{ fontSize: '0.875rem', display: 'block', marginBottom: '0.25rem' }}>
+          Value:
+        </label>
+        {param.type === OscParameterType.BOOLEAN ? (
+          <select
+            className="select"
+            value={String(mapping.staticValue ?? false)}
+            onChange={(e) => updateMapping(paramIndex, { 
+              staticValue: e.target.value === 'true' 
+            })}
+          >
+            <option value="false">False (0)</option>
+            <option value="true">True (1)</option>
+          </select>
+        ) : param.type === OscParameterType.STRING ? (
+          <input
+            type="text"
+            className="input"
+            value={String(mapping.staticValue ?? '')}
+            onChange={(e) => updateMapping(paramIndex, { 
+              staticValue: e.target.value 
+            })}
+            placeholder="Enter value..."
+          />
+        ) : (
+          <input
+            type="number"
+            className="input"
+            value={Number(mapping.staticValue ?? 0)}
+            min={param.min}
+            max={param.max}
+            step={param.type === OscParameterType.FLOAT ? '0.01' : '1'}
+            onChange={(e) => updateMapping(paramIndex, { 
+              staticValue: param.type === OscParameterType.FLOAT 
+                ? parseFloat(e.target.value) 
+                : parseInt(e.target.value) 
+            })}
+            placeholder="Enter value..."
+          />
+        )}
+      </div>
+    );
   };
 
   if (parameters.length === 0) {
@@ -313,40 +252,17 @@ const ParameterEditor: React.FC<ParameterEditorProps> = ({
             </label>
             <select
               className="select"
-              value={mapping?.substitution ?? ParameterSubstitution.NONE}
+              value={mapping?.substitution ?? substitutionOptions[0]}
               onChange={(e) => {
                 const newSubstitution = e.target.value as ParameterSubstitution;
                 const updates: Partial<ParameterMapping> = { 
                   substitution: newSubstitution 
                 };
                 
-                // Initialize default values for index types
-                switch (newSubstitution) {
-                  case ParameterSubstitution.TRACK_INDEX:
-                    if (mapping?.trackIndex === undefined) {
-                      updates.trackIndex = 0;
-                    }
-                    break;
-                  case ParameterSubstitution.CLIP_INDEX:
-                    if (mapping?.clipIndex === undefined) {
-                      updates.clipIndex = 0;
-                    }
-                    break;
-                  case ParameterSubstitution.SCENE_INDEX:
-                    if (mapping?.sceneIndex === undefined) {
-                      updates.sceneIndex = 0;
-                    }
-                    break;
-                  case ParameterSubstitution.DEVICE_INDEX:
-                    if (mapping?.deviceIndex === undefined) {
-                      updates.deviceIndex = 0;
-                    }
-                    break;
-                  case ParameterSubstitution.STATIC_VALUE:
-                    if (mapping?.staticValue === undefined) {
-                      updates.staticValue = param.type === OscParameterType.BOOLEAN ? false : 0;
-                    }
-                    break;
+                // Initialize default value for static value
+                if (newSubstitution === ParameterSubstitution.STATIC_VALUE && mapping?.staticValue === undefined) {
+                  updates.staticValue = param.type === OscParameterType.BOOLEAN ? false : 
+                                        param.type === OscParameterType.STRING ? '' : 0;
                 }
                 
                 updateMapping(index, updates);
