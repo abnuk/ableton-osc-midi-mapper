@@ -24,12 +24,6 @@ export class TrayController {
       this.tray = new Tray(trayIcon);
       console.log('Tray instance created');
       
-      // Set emoji keyboard for macOS - visible and clear
-      if (process.platform === 'darwin') {
-        this.tray.setTitle('🎹');  // Piano keyboard emoji
-        console.log('Tray title set to keyboard emoji');
-      }
-      
       this.tray.setToolTip('Ableton OSC MIDI Mapper');
       console.log('Tooltip set');
       
