@@ -47,8 +47,9 @@ function setDockIcon(): void {
     iconPaths.push(path.join(process.resourcesPath, 'icon.png'));
   } else {
     // Development mode - load from build folder
-    iconPaths.push(path.join(__dirname, '../../..', 'build', 'icon.icns'));
-    iconPaths.push(path.join(__dirname, '../../..', 'build', 'icon.png'));
+    // __dirname is dist/main, so we need ../.. to get to project root
+    iconPaths.push(path.join(__dirname, '../..', 'build', 'icon.icns'));
+    iconPaths.push(path.join(__dirname, '../..', 'build', 'icon.png'));
   }
   
   for (const iconPath of iconPaths) {
@@ -82,12 +83,13 @@ function getAppIcon(): Electron.NativeImage | undefined {
     iconPaths.push(path.join(process.resourcesPath, 'icon.png'));
   } else {
     // Development mode
+    // __dirname is dist/main, so we need ../.. to get to project root
     if (process.platform === 'win32') {
-      iconPaths.push(path.join(__dirname, '../../..', 'build', 'icon.ico'));
+      iconPaths.push(path.join(__dirname, '../..', 'build', 'icon.ico'));
     } else {
-      iconPaths.push(path.join(__dirname, '../../..', 'build', 'icon.icns'));
+      iconPaths.push(path.join(__dirname, '../..', 'build', 'icon.icns'));
     }
-    iconPaths.push(path.join(__dirname, '../../..', 'build', 'icon.png'));
+    iconPaths.push(path.join(__dirname, '../..', 'build', 'icon.png'));
   }
   
   for (const iconPath of iconPaths) {
