@@ -9,6 +9,7 @@ export const TYPES = {
 
   // Services
   MidiInputService: Symbol.for('IMidiInputService'),
+  MidiOutputService: Symbol.for('IMidiOutputService'),
   OscOutputService: Symbol.for('IOscOutputService'),
   TrackNameResolver: Symbol.for('ITrackNameResolver'),
 
@@ -22,6 +23,9 @@ export const TYPES = {
   StopLearnMode: Symbol.for('StopLearnMode'),
   SelectMidiDevice: Symbol.for('SelectMidiDevice'),
   GetMidiDevices: Symbol.for('GetMidiDevices'),
+  GetMidiOutputDevices: Symbol.for('GetMidiOutputDevices'),
+  SelectMidiOutputDevice: Symbol.for('SelectMidiOutputDevice'),
+  SetMidiPassthrough: Symbol.for('SetMidiPassthrough'),
   FetchTrackNames: Symbol.for('FetchTrackNames'),
   GetConfig: Symbol.for('GetConfig'),
   UpdateConfig: Symbol.for('UpdateConfig'),

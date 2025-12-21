@@ -12,7 +12,10 @@ const DEFAULT_CONFIG: AppConfig = {
   oscHost: '127.0.0.1',
   oscPort: 11000,
   autoReconnect: true,
-  lastOpened: new Date().toISOString()
+  lastOpened: new Date().toISOString(),
+  // MIDI Pass-through - disabled by default
+  midiPassthroughDevice: null,
+  midiPassthroughEnabled: false
 };
 
 /**

@@ -10,6 +10,9 @@ export interface AppConfig {
   oscPort: number;
   autoReconnect: boolean;
   lastOpened: string;
+  // MIDI Pass-through settings
+  midiPassthroughDevice: string | null;
+  midiPassthroughEnabled: boolean;
 }
 
 /**

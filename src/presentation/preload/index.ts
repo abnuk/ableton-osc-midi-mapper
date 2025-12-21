@@ -17,6 +17,10 @@ contextBridge.exposeInMainWorld('api', {
   midi: {
     getDevices: () => ipcRenderer.invoke('midi:getDevices'),
     selectDevice: (input: any) => ipcRenderer.invoke('midi:selectDevice', input),
+    getOutputDevices: () => ipcRenderer.invoke('midi:getOutputDevices'),
+    selectOutputDevice: (input: any) => ipcRenderer.invoke('midi:selectOutputDevice', input),
+    setPassthrough: (input: any) => ipcRenderer.invoke('midi:setPassthrough', input),
+    getPassthroughStatus: () => ipcRenderer.invoke('midi:getPassthroughStatus'),
     onMessage: (callback: (message: any) => void) => {
       ipcRenderer.on('midi:message', (_, message) => callback(message));
       return () => ipcRenderer.removeAllListeners('midi:message');
@@ -67,6 +71,10 @@ export interface ElectronAPI {
   midi: {
     getDevices: () => Promise<any>;
     selectDevice: (input: any) => Promise<any>;
+    getOutputDevices: () => Promise<any>;
+    selectOutputDevice: (input: any) => Promise<any>;
+    setPassthrough: (input: any) => Promise<any>;
+    getPassthroughStatus: () => Promise<any>;
     onMessage: (callback: (message: any) => void) => () => void;
   };
   learn: {

@@ -11,13 +11,18 @@ import { ProcessMidiInput } from '@application/use-cases/ProcessMidiInput';
 import { StartLearnMode } from '@application/use-cases/StartLearnMode';
 import { SelectMidiDevice } from '@application/use-cases/SelectMidiDevice';
 import { GetMidiDevices } from '@application/use-cases/GetMidiDevices';
+import { GetMidiOutputDevices } from '@application/use-cases/GetMidiOutputDevices';
+import { SelectMidiOutputDevice } from '@application/use-cases/SelectMidiOutputDevice';
+import { SetMidiPassthrough } from '@application/use-cases/SetMidiPassthrough';
 import { FetchTrackNames } from '@application/use-cases/FetchTrackNames';
 import { GetConfig } from '@application/use-cases/GetConfig';
 import { UpdateConfig } from '@application/use-cases/UpdateConfig';
 import { TestOscConnection } from '@application/use-cases/TestOscConnection';
 import { ManageTrack } from '@application/use-cases/ManageTrack';
 import { IMidiInputService } from '@domain/services/IMidiInputService';
+import { IMidiOutputService } from '@domain/services/IMidiOutputService';
 import { IOscOutputService } from '@domain/services/IOscOutputService';
+import { IConfigRepository } from '@domain/repositories/IConfigRepository';
 
 /**
  * IPC Handlers
@@ -59,6 +64,27 @@ export class IpcHandlers {
     ipcMain.handle('midi:selectDevice', async (_, input) => {
       const useCase = this.container.get<SelectMidiDevice>(TYPES.SelectMidiDevice);
       return await useCase.execute(input);
+    });
+
+    // MIDI Output / Pass-through
+    ipcMain.handle('midi:getOutputDevices', async () => {
+      const useCase = this.container.get<GetMidiOutputDevices>(TYPES.GetMidiOutputDevices);
+      return await useCase.execute();
+    });
+
+    ipcMain.handle('midi:selectOutputDevice', async (_, input) => {
+      const useCase = this.container.get<SelectMidiOutputDevice>(TYPES.SelectMidiOutputDevice);
+      return await useCase.execute(input);
+    });
+
+    ipcMain.handle('midi:setPassthrough', async (_, input) => {
+      const useCase = this.container.get<SetMidiPassthrough>(TYPES.SetMidiPassthrough);
+      return await useCase.execute(input);
+    });
+
+    ipcMain.handle('midi:getPassthroughStatus', async () => {
+      const useCase = this.container.get<SetMidiPassthrough>(TYPES.SetMidiPassthrough);
+      return await useCase.getStatus();
     });
 
     // Learn Mode
@@ -150,12 +176,29 @@ export class IpcHandlers {
     this.webContents = webContents;
     
     const midiService = this.container.get<IMidiInputService>(TYPES.MidiInputService);
+    const midiOutputService = this.container.get<IMidiOutputService>(TYPES.MidiOutputService);
+    const configRepo = this.container.get<IConfigRepository>(TYPES.ConfigRepository);
     const processMidiInput = this.container.get<ProcessMidiInput>(TYPES.ProcessMidiInput);
 
     // Listen for MIDI messages and process them (with source device info)
     midiService.onMessage(async (message, sourceDevice) => {
       // Process the MIDI message through the mapping engine
       await processMidiInput.execute(message, sourceDevice);
+
+      // MIDI Pass-through: forward message to output device if enabled
+      try {
+        const passthroughEnabled = await configRepo.getValue('midiPassthroughEnabled');
+        if (passthroughEnabled.isSuccess() && passthroughEnabled.value) {
+          if (midiOutputService.isOutputDeviceOpen()) {
+            const sendResult = midiOutputService.sendMessage(message);
+            if (sendResult.isFailure()) {
+              console.error('MIDI Pass-through failed:', sendResult.error.message);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error in MIDI pass-through:', error);
+      }
 
       // Notify renderer about MIDI activity
       webContents.send('midi:message', {

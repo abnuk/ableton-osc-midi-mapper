@@ -4,6 +4,7 @@ import { createContainer } from './di-container';
 import { TrayController } from './tray-controller';
 import { IpcHandlers } from './ipc-handlers';
 import { IOscOutputService } from '@domain/services/IOscOutputService';
+import { IMidiOutputService } from '@domain/services/IMidiOutputService';
 import { IConfigRepository } from '@domain/repositories/IConfigRepository';
 import { TYPES } from '@shared/types/DITypes';
 
@@ -198,7 +199,32 @@ async function initialize(): Promise<void> {
       }
     }
   } catch (error) {
-    console.error('Error during initialization:', error);
+    console.error('Error during OSC initialization:', error);
+  }
+
+  // Restore MIDI pass-through device on startup
+  try {
+    const configRepo = container.get<IConfigRepository>(TYPES.ConfigRepository);
+    const midiOutputService = container.get<IMidiOutputService>(TYPES.MidiOutputService);
+
+    const passthroughDevice = await configRepo.getValue('midiPassthroughDevice');
+    const passthroughEnabled = await configRepo.getValue('midiPassthroughEnabled');
+
+    if (passthroughDevice.isSuccess() && passthroughDevice.value) {
+      const openResult = await midiOutputService.openOutputDevice(passthroughDevice.value);
+      if (openResult.isSuccess()) {
+        console.log(`🎹 MIDI Pass-through device restored: ${passthroughDevice.value}`);
+        if (passthroughEnabled.isSuccess() && passthroughEnabled.value) {
+          console.log('🎹 MIDI Pass-through is active');
+        }
+      } else {
+        console.warn('⚠️ Could not open saved MIDI pass-through device:', openResult.error.message);
+        // Disable pass-through if device couldn't be opened
+        await configRepo.setValue('midiPassthroughEnabled', false);
+      }
+    }
+  } catch (error) {
+    console.error('Error during MIDI pass-through initialization:', error);
   }
 }
 

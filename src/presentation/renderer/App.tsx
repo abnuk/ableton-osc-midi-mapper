@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import MidiDeviceSelector from './components/MidiDeviceSelector';
+import MidiPassthrough from './components/MidiPassthrough';
 import MappingList from './components/MappingList';
 import OscCommandBrowser from './components/OscCommandBrowser';
 
 const App: React.FC = () => {
   const [oscConnected, setOscConnected] = useState(false);
   const [midiConnected, setMidiConnected] = useState(false);
+  const [midiPassthroughActive, setMidiPassthroughActive] = useState(false);
   const [learnMode, setLearnMode] = useState(false);
 
   useEffect(() => {
@@ -23,6 +25,13 @@ const App: React.FC = () => {
         if (devices.length > 0) {
           setMidiConnected(true);
         }
+      }
+    });
+
+    // Check MIDI passthrough status
+    window.api.midi.getPassthroughStatus().then((result) => {
+      if (result.success) {
+        setMidiPassthroughActive(result.value.enabled);
       }
     });
 
@@ -59,6 +68,12 @@ const App: React.FC = () => {
             <span className={`status-dot ${midiConnected ? 'connected' : 'disconnected'}`}></span>
             <span>MIDI {midiConnected ? 'Connected' : 'Disconnected'}</span>
           </div>
+          {midiPassthroughActive && (
+            <div className="status-indicator" style={{ background: '#164e3a' }}>
+              <span className="status-dot connected"></span>
+              <span>Pass-through</span>
+            </div>
+          )}
           <button className="btn btn-secondary" onClick={handleTestConnection}>
             Test OSC
           </button>
@@ -72,6 +87,12 @@ const App: React.FC = () => {
             <MidiDeviceSelector 
               onDeviceSelected={() => setMidiConnected(true)} 
               onDeviceDisconnected={() => setMidiConnected(false)}
+            />
+          </div>
+          <div className="sidebar-section">
+            <h2>MIDI Pass-through</h2>
+            <MidiPassthrough 
+              onStatusChange={(enabled) => setMidiPassthroughActive(enabled)}
             />
           </div>
         </aside>
