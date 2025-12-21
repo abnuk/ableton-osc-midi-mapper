@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { MidiMonitorMessage } from '../../preload/index';
 
 interface MidiLogEntry extends MidiMonitorMessage {
@@ -7,13 +7,50 @@ interface MidiLogEntry extends MidiMonitorMessage {
 }
 
 const MAX_LOG_ENTRIES = 100;
+const MIN_HEIGHT = 150;
+const MAX_HEIGHT = 600;
+const DEFAULT_HEIGHT = 280;
 
 const MidiMonitor: React.FC = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [logEntries, setLogEntries] = useState<MidiLogEntry[]>([]);
   const [isMonitoring, setIsMonitoring] = useState(true);
+  const [panelHeight, setPanelHeight] = useState(DEFAULT_HEIGHT);
+  const [isResizing, setIsResizing] = useState(false);
   const logContainerRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const entryIdRef = useRef(0);
+
+  // Handle resize drag
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!panelRef.current) return;
+      
+      const windowHeight = window.innerHeight;
+      const newHeight = windowHeight - e.clientY;
+      const clampedHeight = Math.min(Math.max(newHeight, MIN_HEIGHT), MAX_HEIGHT);
+      setPanelHeight(clampedHeight);
+    };
+
+    const handleMouseUp = () => {
+      setIsResizing(false);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isResizing]);
 
   useEffect(() => {
     if (!isMonitoring) return;
@@ -98,7 +135,17 @@ const MidiMonitor: React.FC = () => {
   };
 
   return (
-    <div className={`midi-monitor ${isExpanded ? 'expanded' : 'collapsed'}`}>
+    <div 
+      ref={panelRef}
+      className={`midi-monitor ${isExpanded ? 'expanded' : 'collapsed'} ${isResizing ? 'resizing' : ''}`}
+      style={isExpanded ? { height: panelHeight } : undefined}
+    >
+      {isExpanded && (
+        <div 
+          className="midi-monitor-resize-handle"
+          onMouseDown={handleMouseDown}
+        />
+      )}
       <div className="midi-monitor-header" onClick={() => setIsExpanded(!isExpanded)}>
         <div className="midi-monitor-title">
           <span className={`midi-monitor-arrow ${isExpanded ? 'expanded' : ''}`}>▶</span>

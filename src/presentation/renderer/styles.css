@@ -263,6 +263,7 @@ body {
   background: #1e1e1e;
   border-top: 1px solid #3a3a3a;
   flex-shrink: 0;
+  position: relative;
 }
 
 .midi-monitor.collapsed {
@@ -270,9 +271,28 @@ body {
 }
 
 .midi-monitor.expanded {
-  height: 280px;
   display: flex;
   flex-direction: column;
+}
+
+.midi-monitor.resizing {
+  user-select: none;
+}
+
+.midi-monitor-resize-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  cursor: ns-resize;
+  background: transparent;
+  z-index: 10;
+}
+
+.midi-monitor-resize-handle:hover,
+.midi-monitor.resizing .midi-monitor-resize-handle {
+  background: linear-gradient(to bottom, #3b82f6 0%, transparent 100%);
 }
 
 .midi-monitor-header {
