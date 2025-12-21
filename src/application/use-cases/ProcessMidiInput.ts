@@ -69,8 +69,8 @@ export class ProcessMidiInput {
           console.error(`Failed to send OSC command: ${sendResult.error.message}`);
           // Continue with other mappings even if one fails
         } else {
-          // Track executed command address
-          executedOscCommands.push(command.address);
+          // Track executed command (address path with parameters)
+          executedOscCommands.push(command.toString());
         }
       }
 
