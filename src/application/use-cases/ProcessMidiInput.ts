@@ -8,6 +8,13 @@ import { ParameterSubstitution } from '@domain/entities/Mapping';
 import { Result, success, failure } from '@shared/types/Result';
 
 /**
+ * Output from ProcessMidiInput containing executed OSC commands
+ */
+export interface ProcessMidiOutput {
+  executedOscCommands: string[];
+}
+
+/**
  * ProcessMidiInput Use Case
  * Processes incoming MIDI messages and executes matching OSC commands
  */
@@ -19,12 +26,14 @@ export class ProcessMidiInput {
     @inject(TYPES.TrackNameResolver) private readonly trackResolver: ITrackNameResolver
   ) {}
 
-  async execute(message: MidiMessage, sourceDevice: string): Promise<Result<void, string>> {
+  async execute(message: MidiMessage, sourceDevice: string): Promise<Result<ProcessMidiOutput, string>> {
     try {
       console.log('=== PROCESS MIDI INPUT: Processing message ===', {
         message: message.type,
         sourceDevice
       });
+      
+      const executedOscCommands: string[] = [];
       
       // Get all mappings
       const mappingsResult = await this.mappingRepository.getAll();
@@ -59,10 +68,13 @@ export class ProcessMidiInput {
         if (sendResult.isFailure()) {
           console.error(`Failed to send OSC command: ${sendResult.error.message}`);
           // Continue with other mappings even if one fails
+        } else {
+          // Track executed command address
+          executedOscCommands.push(command.address);
         }
       }
 
-      return success(undefined);
+      return success({ executedOscCommands });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       console.error('=== PROCESS MIDI INPUT: Error ===', errorMessage);

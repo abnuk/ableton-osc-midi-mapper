@@ -3,6 +3,7 @@ import MidiDeviceSelector from './components/MidiDeviceSelector';
 import MidiPassthrough from './components/MidiPassthrough';
 import MappingList from './components/MappingList';
 import OscCommandBrowser from './components/OscCommandBrowser';
+import MidiMonitor from './components/MidiMonitor';
 
 const App: React.FC = () => {
   const [oscConnected, setOscConnected] = useState(false);
@@ -118,6 +119,8 @@ const App: React.FC = () => {
           <OscCommandBrowser />
         </aside>
       </div>
+
+      <MidiMonitor />
     </div>
   );
 };

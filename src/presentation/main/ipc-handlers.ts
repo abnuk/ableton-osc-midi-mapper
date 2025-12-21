@@ -183,9 +183,11 @@ export class IpcHandlers {
     // Listen for MIDI messages and process them (with source device info)
     midiService.onMessage(async (message, sourceDevice) => {
       // Process the MIDI message through the mapping engine
-      await processMidiInput.execute(message, sourceDevice);
+      const processResult = await processMidiInput.execute(message, sourceDevice);
+      const executedOscCommands = processResult.isSuccess() ? processResult.value.executedOscCommands : [];
 
       // MIDI Pass-through: forward message to output device if enabled
+      let passthroughDevice: string | null = null;
       try {
         const passthroughEnabled = await configRepo.getValue('midiPassthroughEnabled');
         if (passthroughEnabled.isSuccess() && passthroughEnabled.value) {
@@ -193,6 +195,12 @@ export class IpcHandlers {
             const sendResult = midiOutputService.sendMessage(message);
             if (sendResult.isFailure()) {
               console.error('MIDI Pass-through failed:', sendResult.error.message);
+            } else {
+              // Get the pass-through device name
+              const deviceResult = await configRepo.getValue('midiPassthroughDevice');
+              if (deviceResult.isSuccess() && deviceResult.value) {
+                passthroughDevice = deviceResult.value;
+              }
             }
           }
         }
@@ -200,11 +208,13 @@ export class IpcHandlers {
         console.error('Error in MIDI pass-through:', error);
       }
 
-      // Notify renderer about MIDI activity
+      // Notify renderer about MIDI activity with extended data
       webContents.send('midi:message', {
         type: message.type,
         data: message.data.toJSON(),
-        sourceDevice
+        sourceDevice,
+        oscCommands: executedOscCommands,
+        passthroughDevice
       });
     });
   }

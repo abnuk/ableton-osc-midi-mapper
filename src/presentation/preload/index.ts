@@ -60,6 +60,24 @@ contextBridge.exposeInMainWorld('api', {
   }
 });
 
+/**
+ * MIDI message data for monitoring
+ */
+export interface MidiMonitorMessage {
+  type: 'note' | 'cc' | 'program_change';
+  data: {
+    note?: number;
+    velocity?: number;
+    controller?: number;
+    value?: number;
+    program?: number;
+    channel: number;
+  };
+  sourceDevice: string;
+  oscCommands: string[];
+  passthroughDevice: string | null;
+}
+
 // Type declaration for window.api (to be used in renderer)
 export interface ElectronAPI {
   mappings: {
@@ -75,7 +93,7 @@ export interface ElectronAPI {
     selectOutputDevice: (input: any) => Promise<any>;
     setPassthrough: (input: any) => Promise<any>;
     getPassthroughStatus: () => Promise<any>;
-    onMessage: (callback: (message: any) => void) => () => void;
+    onMessage: (callback: (message: MidiMonitorMessage) => void) => () => void;
   };
   learn: {
     start: (input: any) => Promise<any>;
